@@ -1,0 +1,2 @@
+# Replace this with a globally unique S3 bucket name.
+state_bucket_name = "your-globally-unique-state-bucket-name"
