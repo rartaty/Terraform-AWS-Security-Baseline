@@ -5,7 +5,24 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 
 ## Status
 
-設計・構築中
+設計・構築中（Phase 1 完了、次は Phase 2）
+
+## Roadmap
+
+| Phase | 内容 | 状態 |
+|---|---|---|
+| 0 | Terraformプロジェクト基盤 | 完了 |
+| 1 | AWS認証・実行Role・S3 backend | 完了 |
+| 2 | コストガードレール（AWS Budgets） | 次に実施 |
+| 3 | 共通セキュリティ基盤（KMS・S3保護） | 未着手 |
+| 4 | 監査ログ（CloudTrail） | 未着手 |
+| 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 未着手 |
+| 6 | 構成・コンプライアンス管理（AWS Config） | 未着手 |
+| 7 | ネットワーク検証（VPC・Flow Logs） | 未着手 |
+| 8 | 統合試験・証跡・後片付け・文書化 | 未着手 |
+
+Phaseごとの目的、完了条件、依存関係は `docs/02_architecture.md`、
+料金見積りと課金前の確認事項は `docs/04_cost_design.md` を参照する。
 
 ## Environments
 
