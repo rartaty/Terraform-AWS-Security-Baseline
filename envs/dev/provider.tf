@@ -1,5 +1,6 @@
 provider "aws" {
-  region = var.aws_region
+  profile = "terraform"
+  region  = var.aws_region
 
   default_tags {
     tags = {
