@@ -21,6 +21,9 @@ terraform.rc
 .env
 .env.*
 
+# Local article source notes
+docs/07_phase*_work_log.md
+
 # IDE / Editor
 .vscode/
 .idea/
