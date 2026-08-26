@@ -20,3 +20,9 @@ variable "environment" {
     error_message = "environment must be dev, stg, or prod."
   }
 }
+
+variable "budget_notification_email" {
+  description = "Email address that receives AWS Budget alerts"
+  type        = string
+  sensitive   = true
+}
