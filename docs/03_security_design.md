@@ -317,3 +317,20 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
 | 残存risk | `PutObject`を許可された認証情報が侵害されるとstateを上書きできる。versioningがあっても、正しいversionを特定して復旧する作業が必要になる |
+
+### TH-03: 公開GitHub repositoryへの機密情報混入
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | I: Information Disclosure |
+| 関連資産 | A-01、A-02、A-03 |
+| 関連境界 | TB-05 |
+| 関連Data Flow | DF-07 |
+| シナリオ | 認証情報、個人情報、Terraform state、`terraform.tfvars`などを誤ってstaging・commitし、公開GitHub repositoryへpushする |
+| 影響 | 認証情報の不正利用、AWS環境の構成把握、stateに含まれる情報や個人情報の漏えいにつながる。一度取得された情報は、GitHubから削除しても第三者の手元に残る可能性がある |
+| 既存control | `.gitignore`によるstate・`terraform.tfvars`・ローカル作業記録の除外、`terraform.tfvars.example`の使用、commit前の`git status`・`git diff`・staging内容の確認、長期access keyの不使用 |
+| 追加予定control | push前のsecret scan、GitHubのsecret scanning・push protectionの利用可否確認、漏えい時の認証情報失効手順の作成 |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
+| 残存risk | 自動scanでは独自形式の情報や個人情報を検知できない場合がある。公開前に人が内容を確認する必要が残る |
