@@ -281,3 +281,22 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 - 目標残存risk: 追加予定のcontrolが実装・確認された後に想定するrisk
 
 予定しているだけのcontrolは、現在の残存riskを下げる根拠に含めない。
+
+## 8. 脅威シナリオ
+
+### TH-01: 一時認証情報の窃取となりすまし
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | S: Spoofing |
+| 関連資産 | A-01、A-02、A-05 |
+| 関連境界 | TB-01、TB-02 |
+| 関連Data Flow | DF-01、DF-02、DF-03 |
+| シナリオ | phishingやPCの侵害により、有効期限内のIAM userまたはTerraformExecutionRoleの一時認証情報が盗まれ、第三者が正規利用者としてAWS APIを実行する |
+| 影響 | Roleのpermission範囲内で、stateの読み書き、AWS resourceやsecurity設定の変更、想定外のresource作成が行われる可能性がある |
+| 既存control | root userとIAM userへのMFA、長期access keyの不使用、`aws login`による一時認証情報、IAM userとTerraformExecutionRoleの分離、Role permissionのresource制限 |
+| 追加予定control | CloudTrailによる操作記録、GuardDutyによる不審な認証情報利用の検知、IAM permissionの定期確認 |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性2 × 影響度2 = 4（中） |
+| 残存risk | 有効期限内の一時認証情報が盗まれた場合、失効または期限切れになるまで悪用される可能性が残る。GuardDutyもすべての不正利用を必ず検知できるわけではない |
