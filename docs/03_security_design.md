@@ -1,7 +1,8 @@
 # Terraform AWS Security Baseline セキュリティ設計・Threat Model
 
-- 状態: 策定中
+- 状態: 採用
 - 制定日: 2026-08-27
+- 最終更新日: 2026-08-27
 - 対象: 個人所有の単一AWSアカウント、dev環境、ap-northeast-1
 
 ## 1. 目的
@@ -334,3 +335,232 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
 | 残存risk | 自動scanでは独自形式の情報や個人情報を検知できない場合がある。公開前に人が内容を確認する必要が残る |
+
+### TH-04: IAMの過剰権限と権限昇格
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | E: Elevation of Privilege |
+| 関連資産 | A-01、A-05 |
+| 関連境界 | TB-02、TB-04 |
+| 関連Data Flow | DF-02、DF-05 |
+| シナリオ | TerraformExecutionRoleのtrust policyまたはpermission policyを広く設定しすぎた結果、想定外のPrincipalがRoleを引き受ける、またはRoleが本プロジェクトに不要なAWS resourceやIAM設定を操作できる |
+| 影響 | 本来許可されていないAWS resourceの参照・変更・削除、security controlの無効化、新たなIAM権限の作成、想定外の課金につながる可能性がある |
+| 既存control | 日常実行用IAM userとTerraformExecutionRoleの分離、trust policyのPrincipal限定、S3 bucket・state objectを実値ARNで限定したpermission、`AdministratorAccess`を使用しない方針 |
+| 追加予定control | permission追加時のAction・Resource・必要理由の記録、IAM Policy validation、CloudTrailによるIAM変更記録、AWS Config・Security Hubによる設定不備の検知、定期的なpermission確認 |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
+| 残存risk | AWS APIによっては`Resource: "*"`が必要になるため、すべてのpermissionを特定resourceへ限定できるわけではない。permission追加時の人による判断ミスも残る |
+
+### TH-05: 監査ログの停止・削除・改ざん
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | T: Tampering、R: Repudiation |
+| 関連資産 | A-04、A-05 |
+| 関連境界 | TB-04 |
+| 関連Data Flow | DF-05、DF-06 |
+| シナリオ | 認証情報を取得した第三者または誤操作により、CloudTrailの記録が停止される、ログ保存先や転送設定が変更される、または保存済みログが削除・改ざんされる |
+| 影響 | 誰が、いつ、どのAWS APIを実行したか確認できず、security incidentの発生範囲・原因・影響を調査できなくなる |
+| 既存control | IAM userとTerraformExecutionRoleの分離、TerraformコードとGitによる設定変更履歴。project管理のCloudTrailと長期保存先は未実装 |
+| 追加予定control | CloudTrail、専用S3 bucket、CloudWatch Logs転送、KMS暗号化、log file validation、versioning、公開防止、最小IAM permission、AWS Configによる設定変更の記録 |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
+| 残存risk | 正当な管理権限を持つ認証情報が侵害された場合、記録停止と証跡破壊を完全には防止できない。ログ到着の遅延も考慮する必要がある |
+
+### TH-06: 意図しないTerraform Applyとコード・Providerの改ざん
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | T: Tampering、D: Denial of Service |
+| 関連資産 | A-03、A-05 |
+| 関連境界 | TB-04、TB-05 |
+| 関連Data Flow | DF-05、DF-07 |
+| シナリオ | 誤ったコード、確認不足のPlan、改ざんされたTerraform Providerまたは第三者によるrepository変更を信頼してApplyし、想定外のresource作成・変更・削除を実行する |
+| 影響 | security controlの弱体化、ログやstate保存先の削除、AWS resourceの利用不能、想定外の課金につながる可能性がある |
+| 既存control | Gitによる変更履歴、`.terraform.lock.hcl`によるProvider version・checksum固定、`terraform fmt`、`terraform validate`、`terraform plan`、手動承認、Apply後の`No changes`確認 |
+| 追加予定control | staging差分とPlanの確認checklist、`destroy`・replaceの明示確認、機密情報・Terraform設定の自動scan、Phase 8の再構築・削除test |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
+| 残存risk | Planを確認する利用者自身が誤って承認する可能性は残る。checksumは正規Providerの意図しない仕様変更までは防止しない |
+
+### TH-07: S3 bucketの意図しない公開
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | I: Information Disclosure |
+| 関連資産 | A-02、A-04、A-05 |
+| 関連境界 | TB-03、TB-04 |
+| 関連Data Flow | DF-04、DF-05、DF-06 |
+| シナリオ | bucket policy、ACL、Public Access BlockまたはObject Ownershipの設定不備により、state、監査ログまたはConfig履歴がInternetへ公開される |
+| 影響 | AWS環境の構成、操作履歴、resource ID、個人情報またはsensitiveな設定値が第三者へ漏えいする可能性がある |
+| 既存control | state bucketのbucket単位Public Access Block、BucketOwnerEnforced、非公開policy、HTTPS必須、SSE-S3、IAMによるaccess制御 |
+| 追加予定control | Phase 3のアカウントレベルS3 Block Public Access、後続bucketへの同一control適用、IAM Access Analyzer、AWS Config rule、Security Hubによる公開設定検知 |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
+| 残存risk | 強い管理権限で複数の防御設定を意図的に解除された場合は公開できる可能性が残る。公開後の情報は完全に回収できない |
+
+### TH-08: KMS keyの誤設定・無効化・削除
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | D: Denial of Service、E: Elevation of Privilege |
+| 関連資産 | A-04、A-05 |
+| 関連境界 | TB-04 |
+| 関連Data Flow | DF-05、DF-06 |
+| シナリオ | key policyの誤設定で想定外のPrincipalへ利用・管理権限を与える、必要なserviceが暗号鍵を使用できなくなる、またはkeyを無効化・削除予約する |
+| 影響 | ログの暗号化・復号ができなくなり、監査serviceの配信停止、保存済み証跡の利用不能、不正な復号につながる可能性がある |
+| 既存control | customer managed KMS keyは未構築。stateはSSE-S3を使用しており、現時点ではこのkeyへ依存しない |
+| 追加予定control | 最小key policy、key rotation、削除待機期間、Terraformの`prevent_destroy`、alias、CloudTrailによるKMS操作記録、無効化・削除からの復旧手順 |
+| 固有risk | 発生可能性2 × 影響度3 = 6（高） |
+| 現在の残存risk | 対象resource未構築のため評価対象外 |
+| 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
+| 残存risk | key policyを変更できる管理権限の侵害と、削除待機期間経過後のkey material消失は完全には防止できない |
+
+### TH-09: 不正利用・誤操作による想定外の課金
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | D: Denial of Service、E: Elevation of Privilege |
+| 関連資産 | A-01、A-05 |
+| 関連境界 | TB-02、TB-04 |
+| 関連Data Flow | DF-02、DF-05 |
+| シナリオ | 侵害された認証情報、過剰なpermissionまたはTerraform設定ミスにより、高額resource、大量ログまたは不要な有料機能が作成・有効化される |
+| 影響 | 想定外のAWS利用料金が発生し、検証継続が困難になる。費用を止めるための調査・削除作業も必要になる |
+| 既存control | 月額10 USDのAWS Budget、1・3・5・8・10 USDの実績額通知、OutlookとWindows通知、Phaseごとの課金確認、NAT Gateway・EC2・専用public IPv4を原則作成しない方針 |
+| 追加予定control | 各Phaseの公式料金・無料trial終了日・推定月額確認、GuardDuty Protection Planなど自動有効化項目の確認、実測費用と残存resourceの記録 |
+| 固有risk | 発生可能性3 × 影響度2 = 6（高） |
+| 現在の残存risk | 発生可能性2 × 影響度2 = 4（中） |
+| 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
+| 残存risk | Budgetはresourceを停止する上限ではなく、料金情報と通知には遅延がある。通知確認前に費用が増える可能性は残る |
+
+### TH-10: Network設定不備による意図しない通信許可
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | I: Information Disclosure、E: Elevation of Privilege |
+| 関連資産 | A-05 |
+| 関連境界 | TB-04 |
+| 関連Data Flow | DF-05、DF-06 |
+| シナリオ | Security Group、route table、subnetまたはInternet Gatewayの設定不備により、想定していない送信元・宛先・portへの通信を許可する |
+| 影響 | 将来配置するresourceへの不正access、情報漏えい、侵害後の横展開につながる可能性がある |
+| 既存control | 検証用VPCとnetwork resourceは未構築。EC2、NAT Gateway、専用public IPv4を原則作成しない方針 |
+| 追加予定control | 必要最小限のSecurity Group、public/private subnetとrouteの分離、不要なinbound ruleの禁止、VPC Flow Logs、PlanとAWS Consoleによる設定確認 |
+| 固有risk | 発生可能性2 × 影響度3 = 6（高） |
+| 現在の残存risk | 対象resource未構築のため評価対象外 |
+| 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
+| 残存risk | Network設定が正しくても、将来配置するapplication自体の脆弱性や認証不備は別のriskとして残る |
+
+## 9. Security control対応表
+
+| Control ID | Security control | 対応する脅威 | 状態 | 実施Phase |
+|---|---|---|---|---|
+| C-01 | root user・IAM userのMFA、一時認証情報、長期access key不使用 | TH-01 | 実装済み | Phase 1 |
+| C-02 | IAM userとTerraformExecutionRoleの分離、限定したtrust policyとpermission | TH-01、TH-04、TH-09 | 一部実装・継続見直し | Phase 1〜8 |
+| C-03 | 非公開・暗号化・versioning・HTTPS必須・lockfileを備えたS3 backend | TH-02、TH-07 | 実装済み | Phase 1 |
+| C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
+| C-05 | customer managed KMS keyとアカウントレベルS3 Block Public Access | TH-07、TH-08 | 未実装 | Phase 3 |
+| C-06 | CloudTrail、専用S3、CloudWatch Logs、log file validation | TH-01、TH-04、TH-05、TH-06 | 未実装 | Phase 4 |
+| C-07 | GuardDutyによる不審な操作・認証情報利用の検知 | TH-01、TH-09 | 未実装 | Phase 5 |
+| C-08 | Security HubとIAM Access Analyzerによる設定・外部公開検知 | TH-04、TH-07、TH-10 | 未実装 | Phase 5 |
+| C-09 | AWS Configによる構成履歴とrule評価 | TH-04、TH-05、TH-07、TH-10 | 未実装 | Phase 6 |
+| C-10 | AWS Budgetとメール・Windows通知 | TH-09 | 実装済み | Phase 2 |
+| C-11 | Provider lock、`fmt`、`validate`、`plan`、手動承認、`No changes`確認 | TH-02、TH-06、TH-09 | 実装済み・継続運用 | 全Phase |
+| C-12 | 復旧・incident対応・destroy・残存resource確認 | TH-01〜TH-10 | 未実装 | Phase 8 |
+
+「未実装」のcontrolは設計上の予定であり、現在の残存riskを下げる根拠には含めない。
+Terraform Applyと機能testが完了した時点で、状態を「実装済み」へ更新する。
+
+## 10. Risk一覧と対応優先度
+
+| 脅威ID | 概要 | 現在の残存risk | 目標残存risk | 主な対応Phase |
+|---|---|---|---|---|
+| TH-01 | 一時認証情報の窃取となりすまし | 6（高） | 4（中） | Phase 4、5 |
+| TH-02 | Terraform stateの改ざん・削除 | 6（高） | 2（低） | Phase 8、S3 data eventは別途判断 |
+| TH-03 | 公開GitHubへの機密情報混入 | 6（高） | 3（中） | Phase 8、継続運用 |
+| TH-04 | IAMの過剰権限と権限昇格 | 6（高） | 3（中） | Phase 4〜6、継続運用 |
+| TH-05 | 監査ログの停止・削除・改ざん | 6（高） | 2（低） | Phase 4、6 |
+| TH-06 | 意図しないApplyとコード・Provider改ざん | 6（高） | 2（低） | 全Phase、Phase 8 |
+| TH-07 | S3 bucketの意図しない公開 | 6（高） | 3（中） | Phase 3〜6 |
+| TH-08 | KMS keyの誤設定・無効化・削除 | 対象resource未構築 | 2（低） | Phase 3、8 |
+| TH-09 | 不正利用・誤操作による想定外の課金 | 4（中） | 2（低） | 全Phase |
+| TH-10 | Network設定不備による意図しない通信許可 | 対象resource未構築 | 3（中） | Phase 7 |
+
+現在「高」のriskは、後続Phaseのcontrolが未実装であることを反映している。
+本番workloadとbusiness dataを配置しない条件で一時的に受容し、
+対応Phaseの完了時に再評価する。
+
+## 11. Controlの実装完了条件
+
+Security controlは、設計またはTerraformコードへ記載しただけでは実装済みとしない。
+次の条件をすべて確認した場合に実装済みとする。
+
+1. controlの目的と対応する脅威IDが記録されている。
+2. 課金項目、推定費用、無料trial、削除方法を確認している。
+3. TerraformコードがGitで管理され、認証情報と個人情報を含まない。
+4. `terraform fmt`と`terraform validate`が成功している。
+5. `terraform plan`で作成・変更・削除を確認し、意図しない`destroy`やreplaceがない。
+6. `terraform apply`が成功し、AWS上の実体をConsoleまたはCLIで確認している。
+7. 公開拒否、ログ到着、検知、通知など、controlの目的に対応する機能testが成功している。
+8. Apply後の`terraform plan`が`No changes`になる。
+9. 証跡、判断理由、残存resource、継続月額を記録している。
+
+目標残存riskは、対応するcontrolがこの完了条件を満たした後に再評価する。
+
+## 12. Security incident時の初動原則
+
+1. 新たなTerraform Applyを停止し、発生時刻、画面、command結果を保存する。
+2. 認証情報の侵害が疑われる場合は、該当sessionを失効させ、password・MFA・Roleのtrust関係を確認する。
+3. CloudTrail、GuardDuty、AWS ConfigおよびGit履歴から、実行者、時刻、対象resource、変更内容を特定する。
+4. 必要最小限のpermissionへ縮小し、不審なresourceや公開設定を隔離する。
+5. state異常の場合は現在のstateを別途保全し、S3 versioningから復旧対象versionを特定してから復元する。
+6. AWS BudgetとBilling情報を確認し、想定外の有料resourceを特定する。
+7. 原因、影響、復旧内容、再発防止策を記録し、必要な変更をTerraformコードへ反映する。
+
+調査に必要なログやstateを、証跡保全前に削除または上書きしない。
+詳細なcommandとservice別手順はPhase 8でrunbookとして作成する。
+
+## 13. 課金を伴うcontrolの判断ルール
+
+次のcontrolは利用量、保存量、評価回数または有効期間に応じて課金される可能性がある。
+
+- customer managed KMS keyとKMS API request
+- CloudTrailの追加copy、S3 data event、CloudTrail Insights
+- CloudWatch Logsの取り込み、保存、検索、metric・alarm
+- GuardDutyのProtection Planと分析量
+- Security Hubの有効機能、security checkおよびfinding取り込み
+- AWS Configの記録項目、rule評価、conformance pack
+- VPC Flow Logsの配信先における取り込み・保存
+- S3のログ・state・versioningによる保存量とrequest
+
+各PhaseのApply前に、実装時点のAWS公式料金、無料trial終了日、
+対象region、記録対象、保持期間、推定月額および削除方法を確認する。
+
+AWS Budgetは課金を停止する機能ではなく、料金情報と通知には遅延がある。
+最初は対象・保持期間・rule・Protection Planを必要最小限にし、
+機能testと実測費用を確認してから拡張する。
+
+## 14. 見直し条件
+
+このThreat Modelは次の場合に見直す。
+
+- 各Phaseが完了し、controlの実装状態または残存riskが変化したとき
+- IAM user、Role、trust policy、permission policyを変更したとき
+- 新しいAWS service、region、accountまたはenvironmentを追加したとき
+- 将来の別system、application、business data、利用者認証、外部access経路を接続するとき
+- security incident、認証情報漏えい、state異常または想定外の課金が発生したとき
+- AWS serviceの仕様、Terraform Providerまたは料金体系が変わったとき
+- 定期見直し日である2026-11-27に到達したとき
+
+見直し時は、資産、対象範囲、Trust Boundary、Data Flow、脅威、control、
+現在の残存risk、目標残存risk、課金見積りを更新する。
+
+## 15. 文書の完了状態
+
+本書は、Phase 3以降の実装判断に使用するThreat Modelの初版として採用する。
+文書の完成は、未実装controlがAWS上で有効になったことを意味しない。
+実装状態はSecurity control対応表と各Phaseの検証記録で継続管理する。
