@@ -300,3 +300,20 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性2 × 影響度2 = 4（中） |
 | 残存risk | 有効期限内の一時認証情報が盗まれた場合、失効または期限切れになるまで悪用される可能性が残る。GuardDutyもすべての不正利用を必ず検知できるわけではない |
+
+### TH-02: Terraform stateの改ざん・削除
+
+| 項目 | 内容 |
+|---|---|
+| STRIDE | T: Tampering、D: Denial of Service |
+| 関連資産 | A-02、A-05 |
+| 関連境界 | TB-03 |
+| 関連Data Flow | DF-04 |
+| シナリオ | 認証情報を取得した第三者や誤操作により、S3上のstateが不正に上書き・削除される。または複数のTerraform実行が競合し、stateの整合性が失われる |
+| 影響 | Terraformコードと実際のAWS resourceの対応関係が崩れ、誤った作成・変更・削除がPlanへ表示される、またはTerraformによる管理を継続できなくなる |
+| 既存control | S3の非公開化、SSE-S3、HTTPS必須、versioning、state objectに限定したIAM permission、state objectへの`DeleteObject`不許可、S3 lockfile |
+| 追加予定control | state復旧手順の作成と復旧test、S3 bucketへの`prevent_destroy`の検討、S3 data eventの記録要否と費用の検討 |
+| 固有risk | 発生可能性3 × 影響度3 = 9（高） |
+| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
+| 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
+| 残存risk | `PutObject`を許可された認証情報が侵害されるとstateを上書きできる。versioningがあっても、正しいversionを特定して復旧する作業が必要になる |
