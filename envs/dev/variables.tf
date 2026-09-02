@@ -26,3 +26,8 @@ variable "budget_notification_email" {
   type        = string
   sensitive   = true
 }
+
+variable "cloudtrail_bucket_name" {
+  description = "Globally unique S3 bucket name for CloudTrail logs"
+  type        = string
+}

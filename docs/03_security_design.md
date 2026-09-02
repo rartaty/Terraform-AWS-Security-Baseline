@@ -463,11 +463,12 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-02 | IAM userとTerraformExecutionRoleの分離、限定したtrust policyとpermission | TH-01、TH-04、TH-09 | 一部実装・継続見直し | Phase 1〜8 |
 | C-03 | 非公開・暗号化・versioning・HTTPS必須・lockfileを備えたS3 backend | TH-02、TH-07 | 実装済み | Phase 1 |
 | C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
-| C-05 | アカウントレベルS3 Block Public Access（実装済み）とcustomer managed KMS key（未実装） | TH-07、TH-08 | 一部実装 | Phase 3 || C-06 | CloudTrail、専用S3、CloudWatch Logs、log file validation | TH-01、TH-04、TH-05、TH-06 | 未実装 | Phase 4 |
+| C-05 | アカウントレベルS3 Block Public Access（実装済み）とcustomer managed KMS key（未実装） | TH-07、TH-08 | 一部実装 | Phase 3 |
+| C-06 | multi-region CloudTrail、management events、専用S3、90日保持、log file validation（CloudWatch Logsは未実装） | TH-01、TH-04、TH-05、TH-06 | 一部実装 | Phase 4 |
 | C-07 | GuardDutyによる不審な操作・認証情報利用の検知 | TH-01、TH-09 | 未実装 | Phase 5 |
 | C-08 | Security HubとIAM Access Analyzerによる設定・外部公開検知 | TH-04、TH-07、TH-10 | 未実装 | Phase 5 |
 | C-09 | AWS Configによる構成履歴とrule評価 | TH-04、TH-05、TH-07、TH-10 | 未実装 | Phase 6 |
-| C-10 | AWS Budget、メール・Windows通知、Budget Actionによる高額リソース作成の自動抑止 | TH-09 | 実装済み / Phase 2 |
+| C-10 | AWS Budget、メール・Windows通知、Budget Actionによる高額リソース作成の自動抑止 | TH-09 | 実装済み | Phase 2 |
 | C-11 | Provider lock、`fmt`、`validate`、`plan`、手動承認、`No changes`確認 | TH-02、TH-06、TH-09 | 実装済み・継続運用 | 全Phase |
 | C-12 | 復旧・incident対応・destroy・残存resource確認 | TH-01〜TH-10 | 未実装 | Phase 8 |
 
