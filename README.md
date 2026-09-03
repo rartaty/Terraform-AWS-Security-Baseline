@@ -5,7 +5,7 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 
 ## Status
 
-設計・構築中（Phase 2 完了、次は Phase 3）
+設計・構築中（Phase 0〜2 完了、Phase 3・4 は一部実装済み）
 
 ## Roadmap
 
@@ -14,8 +14,8 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 | 0 | Terraformプロジェクト基盤 | 完了 |
 | 1 | AWS認証・実行Role・S3 backend | 完了 |
 | 2 | コストガードレール（AWS Budgets） | 完了 |
-| 3 | 共通セキュリティ基盤（KMS・S3保護） | 次に実施 |
-| 4 | 監査ログ（CloudTrail） | 未着手 |
+| 3 | 共通セキュリティ基盤（KMS・S3保護） | 一部実装済み（アカウントレベルS3公開防止は完了、KMSは未実装） |
+| 4 | 監査ログ（CloudTrail） | 一部実装済み（CloudTrail・専用S3は稼働済み、KMS連携・HTTPS必須化・CloudWatch Logs連携は未実装） |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 未着手 |
 | 6 | 構成・コンプライアンス管理（AWS Config） | 未着手 |
 | 7 | ネットワーク検証（VPC・Flow Logs） | 未着手 |
