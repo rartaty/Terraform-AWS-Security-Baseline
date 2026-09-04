@@ -363,8 +363,8 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 関連Data Flow | DF-05、DF-06 |
 | シナリオ | 認証情報を取得した第三者または誤操作により、CloudTrailの記録が停止される、ログ保存先や転送設定が変更される、または保存済みログが削除・改ざんされる |
 | 影響 | 誰が、いつ、どのAWS APIを実行したか確認できず、security incidentの発生範囲・原因・影響を調査できなくなる |
-| 既存control | IAM userとTerraformExecutionRoleの分離、TerraformコードとGitによる設定変更履歴。project管理のCloudTrailと長期保存先は未実装 |
-| 追加予定control | CloudTrail、専用S3 bucket、CloudWatch Logs転送、KMS暗号化、log file validation、versioning、公開防止、最小IAM permission、AWS Configによる設定変更の記録 |
+| 既存control | IAM userとTerraformExecutionRoleの分離、TerraformコードとGitによる設定変更履歴、multi-region CloudTrailによるmanagement events記録、専用S3 bucket、公開防止、versioning、90日保持、Log File Validation、customer managed KMS key、CloudTrailLogReadRoleによる限定閲覧 |
+| 追加予定control | AWS Configによる構成変更の記録。CloudWatch Logs転送は、リアルタイム検知の要件と料金を確認してから別途判断する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
@@ -463,8 +463,8 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-02 | IAM userとTerraformExecutionRoleの分離、限定したtrust policyとpermission | TH-01、TH-04、TH-09 | 一部実装・継続見直し | Phase 1〜8 |
 | C-03 | 非公開・暗号化・versioning・HTTPS必須・lockfileを備えたS3 backend | TH-02、TH-07 | 実装済み | Phase 1 |
 | C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
-| C-05 | アカウントレベルS3 Block Public Access（実装済み）とcustomer managed KMS key（未実装） | TH-07、TH-08 | 一部実装 | Phase 3 |
-| C-06 | multi-region CloudTrail、management events、専用S3、90日保持、log file validation（CloudWatch Logsは未実装） | TH-01、TH-04、TH-05、TH-06 | 一部実装 | Phase 4 |
+| C-05 | アカウントレベルS3 Block Public Access、CloudTrailログ専用customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み | Phase 3〜4 |
+| C-06 | multi-region CloudTrail、management events、専用S3、SSE-KMS、90日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装済み（CloudWatch Logs転送は別途判断） | Phase 4 |
 | C-07 | GuardDutyによる不審な操作・認証情報利用の検知 | TH-01、TH-09 | 未実装 | Phase 5 |
 | C-08 | Security HubとIAM Access Analyzerによる設定・外部公開検知 | TH-04、TH-07、TH-10 | 未実装 | Phase 5 |
 | C-09 | AWS Configによる構成履歴とrule評価 | TH-04、TH-05、TH-07、TH-10 | 未実装 | Phase 6 |
