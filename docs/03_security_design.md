@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-27
-- 最終更新日: 2026-08-27
+- 最終更新日: 2026-09-05
 - 対象: 個人所有の単一AWSアカウント、dev環境、ap-northeast-1
 
 ## 1. 目的
@@ -465,8 +465,8 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
 | C-05 | アカウントレベルS3 Block Public Access、CloudTrailログ専用customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み | Phase 3〜4 |
 | C-06 | multi-region CloudTrail、management events、専用S3、SSE-KMS、90日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装済み（CloudWatch Logs転送は別途判断） | Phase 4 |
-| C-07 | GuardDutyによる不審な操作・認証情報利用の検知 | TH-01、TH-09 | 未実装 | Phase 5 |
-| C-08 | Security HubとIAM Access Analyzerによる設定・外部公開検知 | TH-04、TH-07、TH-10 | 未実装 | Phase 5 |
+| C-07 | GuardDuty Foundational Threat Detectionによる不審な操作・認証情報利用の検知。対象外のProtection Planは明示的に無効化 | TH-01、TH-09 | 実装済み | Phase 5 |
+| C-08 | IAM Access Analyzerのexternal access analyzer、Security Hub Essentials・CSPM・AWS Foundational Security Best Practicesによる外部公開・設定不備の検知 | TH-04、TH-07、TH-10 | 実装済み（Automation Rules・自動修復・有料addonは未採用） | Phase 5 |
 | C-09 | AWS Configによる構成履歴とrule評価 | TH-04、TH-05、TH-07、TH-10 | 未実装 | Phase 6 |
 | C-10 | AWS Budget、メール・Windows通知、Budget Actionによる高額リソース作成の自動抑止 | TH-09 | 実装済み | Phase 2 |
 | C-11 | Provider lock、`fmt`、`validate`、`plan`、手動承認、`No changes`確認 | TH-02、TH-06、TH-09 | 実装済み・継続運用 | 全Phase |
@@ -523,6 +523,19 @@ Security controlは、設計またはTerraformコードへ記載しただけで�
 
 調査に必要なログやstateを、証跡保全前に削除または上書きしない。
 詳細なcommandとservice別手順はPhase 8でrunbookとして作成する。
+
+### 12.1 Findingの調査・判断手順
+
+Security HubまたはGuardDutyのFindingは、異常の確定ではなく調査開始の合図として扱う。
+Findingだけで実行者や正当性を判断せず、CloudTrailの元イベントと自分の変更記録を照合する。
+
+1. Security Hubで、検知元service、Finding type、Severity、検知時刻およびworkflow statusを確認する。
+2. CloudTrail Event historyまたは保存済みCloudTrailログで、identity、API、対象resource、時刻、source IP addressおよびUser-Agentを確認する。
+3. Terraformの`plan`、Gitの変更履歴、承認済みの作業内容と、APIおよび対象resourceが一致するか判断する。
+4. 一致しない、または判断に必要な情報が不足する場合は、Findingを`IN PROGRESS`のまま保持し、認証情報の保護と影響範囲の調査を優先する。
+5. 正当な操作であり対応が完了した場合だけ、調査根拠と再発防止策を記録してFindingを`RESOLVED`にする。
+
+root userは個別利用者を識別する日常運用用identityではない。root userによる操作が検知された場合は、操作の正当性を確認した後も、通常作業をIAM userとRoleの一時認証情報へ戻す。
 
 ## 13. 課金を伴うcontrolの判断ルール
 
