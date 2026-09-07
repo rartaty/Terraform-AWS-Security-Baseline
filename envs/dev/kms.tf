@@ -82,6 +82,36 @@ data "aws_iam_policy_document" "security_logs_key_policy" {
     }
   }
   statement {
+    sid    = "AllowAWSConfigUseOfKey"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["config.amazonaws.com"]
+    }
+
+    actions = [
+      "kms:Decrypt",
+      "kms:GenerateDataKey"
+    ]
+
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values = [
+        "arn:aws:config:${var.aws_region}:${data.aws_caller_identity.current.account_id}:*"
+      ]
+    }
+  }
+  statement {
     sid    = "AllowTerraformExecutionRoleKeyAdministration"
     effect = "Allow"
 
