@@ -31,3 +31,8 @@ variable "cloudtrail_bucket_name" {
   description = "Globally unique S3 bucket name for CloudTrail logs"
   type        = string
 }
+
+variable "config_bucket_name" {
+  description = "Globally unique S3 bucket name for AWS Config configuration history"
+  type        = string
+}
