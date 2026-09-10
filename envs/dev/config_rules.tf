@@ -2,9 +2,9 @@ locals {
   config_managed_rules = {
     s3_account_public_access = {
       name                        = "s3-account-bpa"
-      description                 = "Checks account-level S3 Block Public Access settings."
-      source_identifier           = "S3_ACCOUNT_LEVEL_PUBLIC_ACCESS_BLOCKS"
-      maximum_execution_frequency = null
+      description                 = "Checks account-level S3 Block Public Access settings every 24 hours."
+      source_identifier           = "S3_ACCOUNT_LEVEL_PUBLIC_ACCESS_BLOCKS_PERIODIC"
+      maximum_execution_frequency = "TwentyFour_Hours"
     }
 
     s3_public_read = {
