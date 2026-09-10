@@ -125,7 +125,6 @@ data "aws_iam_policy_document" "security_logs_key_policy" {
     actions = [
       "kms:DescribeKey",
       "kms:GetKeyPolicy",
-      "kms:PutKeyPolicy",
       "kms:UpdateKeyDescription",
       "kms:GetKeyRotationStatus",
       "kms:EnableKeyRotation",
