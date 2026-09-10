@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-27
-- 最終更新日: 2026-09-05
+- 最終更新日: 2026-09-10
 - 対象: 個人所有の単一AWSアカウント、dev環境、ap-northeast-1
 
 ## 1. 目的
@@ -467,7 +467,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-06 | multi-region CloudTrail、management events、専用S3、SSE-KMS、30日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装済み（CloudWatch Logs転送は別途判断） | Phase 4 |
 | C-07 | GuardDuty Foundational Threat Detectionによる不審な操作・認証情報利用の検知。対象外のProtection Planは明示的に無効化 | TH-01、TH-09 | 実装済み | Phase 5 |
 | C-08 | IAM Access Analyzerのexternal access analyzer、Security Hub Essentials・CSPM・AWS Foundational Security Best Practicesによる外部公開・設定不備の検知 | TH-04、TH-07、TH-10 | 実装済み（Automation Rules・自動修復・有料addonは未採用） | Phase 5 |
-| C-09 | AWS Configによる構成履歴とrule評価 | TH-04、TH-05、TH-07、TH-10 | 未実装 | Phase 6 |
+| C-09 | AWS Configによる選択resourceの継続的な構成履歴記録、専用S3へのSSE-KMS暗号化保存、7つのManaged Rulesによる24時間ごとまたは設定変更時の準拠評価 | TH-04、TH-05、TH-07、TH-10 | 実装済み | Phase 6 |
 | C-10 | AWS Budget、メール・Windows通知、Budget Actionによる高額リソース作成の自動抑止 | TH-09 | 実装済み | Phase 2 |
 | C-11 | Provider lock、`fmt`、`validate`、`plan`、手動承認、`No changes`確認 | TH-02、TH-06、TH-09 | 実装済み・継続運用 | 全Phase |
 | C-12 | 復旧・incident対応・destroy・残存resource確認 | TH-01〜TH-10 | 未実装 | Phase 8 |
