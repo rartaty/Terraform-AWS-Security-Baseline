@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-25
-- 更新日: 2026-08-26
+- 更新日: 2026-09-10（構成前提の同期。料金表の再調査ではない）
 - 対象リージョン: `ap-northeast-1`（東京）
 
 ## 1. 結論
@@ -24,7 +24,7 @@
 - 本番ワークロード、EC2常時稼働、NAT Gateway、Load Balancer、専用public IPv4は使わない。
 - CloudTrailは管理イベントの最初のコピーだけをS3へ配信する。
 - CloudTrailのデータイベント、Insights、CloudTrail Lakeは使わない。
-- CloudWatch LogsとVPC Flow Logsは低トラフィックで、各1 GB/月未満を想定する。
+- 初期概算ではCloudWatch LogsとVPC Flow Logsを各1 GB/月未満と仮定した。現在CloudWatch Logs転送は見送り、VPC Flow Logsは未実装であり、採用時に再見積りする。
 - KMS customer managed keyは1個とし、後続サービスで共有する。
 - Security HubはEssentials相当の必要機能だけとし、Extended Planは使わない。
 - GuardDuty Protection Planは必要なものだけを選び、不要なplanは無効化する。
@@ -35,6 +35,12 @@
 前提から外れる変更を行う場合は、`terraform apply`より前に再見積りする。
 
 ## 3. Phase別の月額見積り
+
+以下の表と累計は2026-08-25の全Phase初期概算であり、現行構成の実測値ではない。
+CloudWatch Logs転送はADR 0005で見送り、VPC Flow LogsはPhase 7未着手。
+Phase 6の採用構成に対する見積りはADR 0008の月額0.10～1.00 USD程度を参照する。
+表の0.10～5.00 USDは初期の広い概算として残す。いずれも上限保証ではなく、
+Configuration Item数・Rule評価数・実料金は未確認であり、確認後に表と累計を再見積りする。
 
 金額は、そのPhaseで作成したリソースを1か月保持した場合の**追加月額**である。
 Phase作業そのものに固定料金があるわけではなく、作成後に残すAWSリソースと利用量で決まる。
@@ -131,7 +137,7 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 明示的な了承を得てから行う。
 
 - Phase 3: customer managed KMS keyの`apply`
-- Phase 4: CloudWatch Logs転送を含むCloudTrailの`apply`
+- Phase 4: CloudTrailの`apply`。見送り中のCloudWatch Logs転送を後から追加する場合も事前承認・再見積りする。
 - Phase 5: GuardDutyまたはSecurity Hubの有効化
 - Phase 6: AWS Config recorderとConfig ruleの有効化
 - Phase 7: Flow Logs、EC2、NAT Gateway、public IPv4等の作成

@@ -347,7 +347,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | TerraformExecutionRoleのtrust policyまたはpermission policyを広く設定しすぎた結果、想定外のPrincipalがRoleを引き受ける、またはRoleが本プロジェクトに不要なAWS resourceやIAM設定を操作できる |
 | 影響 | 本来許可されていないAWS resourceの参照・変更・削除、security controlの無効化、新たなIAM権限の作成、想定外の課金につながる可能性がある |
 | 既存control | 日常実行用IAM userとTerraformExecutionRoleの分離、trust policyのPrincipal限定、S3 bucket・state objectを実値ARNで限定したpermission、`AdministratorAccess`を使用しない方針 |
-| 追加予定control | permission追加時のAction・Resource・必要理由の記録、IAM Policy validation、CloudTrailによるIAM変更記録、AWS Config・Security Hubによる設定不備の検知、定期的なpermission確認 |
+| 実装反映・追加予定control | CloudTrailの管理イベント記録、AWS Configの選択resource記録、Security Hubは実装済み。ただしIAMの全設定不備を検知するとは限らない。permission追加理由の記録、Policy validation、定期的なpermission確認は継続する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
@@ -364,7 +364,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | 認証情報を取得した第三者または誤操作により、CloudTrailの記録が停止される、ログ保存先や転送設定が変更される、または保存済みログが削除・改ざんされる |
 | 影響 | 誰が、いつ、どのAWS APIを実行したか確認できず、security incidentの発生範囲・原因・影響を調査できなくなる |
 | 既存control | IAM userとTerraformExecutionRoleの分離、TerraformコードとGitによる設定変更履歴、multi-region CloudTrailによるmanagement events記録、専用S3 bucket、公開防止、versioning、30日保持、Log File Validation、customer managed KMS key、CloudTrailLogReadRoleによる限定閲覧 |
-| 追加予定control | AWS Configによる構成変更の記録。CloudWatch Logs転送は、リアルタイム検知の要件と料金を確認してから別途判断する |
+| 実装反映・追加予定control | AWS Configによる選択resourceの構成変更記録は実装済み。CloudTrail用S3のHTTPS必須化は未実装。CloudWatch Logs転送はADR 0005で見送り、必要時に再判断する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
@@ -398,7 +398,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | bucket policy、ACL、Public Access BlockまたはObject Ownershipの設定不備により、state、監査ログまたはConfig履歴がInternetへ公開される |
 | 影響 | AWS環境の構成、操作履歴、resource ID、個人情報またはsensitiveな設定値が第三者へ漏えいする可能性がある |
 | 既存control | state bucketのbucket単位Public Access Block、BucketOwnerEnforced、非公開policy、HTTPS必須、SSE-S3、IAMによるaccess制御 |
-| 追加予定control | Phase 3のアカウントレベルS3 Block Public Access、後続bucketへの同一control適用、IAM Access Analyzer、AWS Config rule、Security Hubによる公開設定検知 |
+| 実装反映・追加予定control | アカウントレベルS3 Block Public Access、CloudTrail・Config bucketの公開防止、外部Access Analyzer、Config Rules、Security Hubは実装済み。後続bucketにも保護を適用し、検知対象・有効なcontrolの範囲を確認する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
@@ -414,10 +414,10 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 関連Data Flow | DF-05、DF-06 |
 | シナリオ | key policyの誤設定で想定外のPrincipalへ利用・管理権限を与える、必要なserviceが暗号鍵を使用できなくなる、またはkeyを無効化・削除予約する |
 | 影響 | ログの暗号化・復号ができなくなり、監査serviceの配信停止、保存済み証跡の利用不能、不正な復号につながる可能性がある |
-| 既存control | customer managed KMS keyは未構築。stateはSSE-S3を使用しており、現時点ではこのkeyへ依存しない |
-| 追加予定control | 最小key policy、key rotation、削除待機期間、Terraformの`prevent_destroy`、alias、CloudTrailによるKMS操作記録、無効化・削除からの復旧手順 |
+| 既存control | CloudTrail・Config共有のcustomer managed KMS key、用途を限定したkey policy、rotation、30日削除待機、Terraformの`prevent_destroy`。TerraformExecutionRoleへの直接のPutKeyPolicy許可を除去。証跡閲覧Roleでは対象keyのkms:*を明示的Deny。stateはSSE-S3であり共有keyに依存しない |
+| 追加予定control | aliasの採否判断、無効化・削除からの復旧手順と検証。現存する管理権限を踏まえた残存risk再評価 |
 | 固有risk | 発生可能性2 × 影響度3 = 6（高） |
-| 現在の残存risk | 対象resource未構築のため評価対象外 |
+| 現在の残存risk | 評価対象。共有keyの無効化・削除はCloudTrailとConfigの両方へ影響する。現行権限と復旧可能性の確認後に再採点する（低risk確定とはしない） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
 | 残存risk | key policyを変更できる管理権限の侵害と、削除待機期間経過後のkey material消失は完全には防止できない |
 
@@ -463,7 +463,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-02 | IAM userとTerraformExecutionRoleの分離、限定したtrust policyとpermission | TH-01、TH-04、TH-09 | 一部実装・継続見直し | Phase 1〜8 |
 | C-03 | 非公開・暗号化・versioning・HTTPS必須・lockfileを備えたS3 backend | TH-02、TH-07 | 実装済み | Phase 1 |
 | C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
-| C-05 | アカウントレベルS3 Block Public Access、CloudTrailログ専用customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み | Phase 3〜4 |
+| C-05 | アカウントレベルS3 Block Public Access、CloudTrail・Config共有customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み（aliasは採否判断待ち） | Phase 3〜6 |
 | C-06 | multi-region CloudTrail、management events、専用S3、SSE-KMS、30日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装済み（CloudWatch Logs転送は別途判断） | Phase 4 |
 | C-07 | GuardDuty Foundational Threat Detectionによる不審な操作・認証情報利用の検知。対象外のProtection Planは明示的に無効化 | TH-01、TH-09 | 実装済み | Phase 5 |
 | C-08 | IAM Access Analyzerのexternal access analyzer、Security Hub Essentials・CSPM・AWS Foundational Security Best Practicesによる外部公開・設定不備の検知 | TH-04、TH-07、TH-10 | 実装済み（Automation Rules・自動修復・有料addonは未採用） | Phase 5 |
@@ -486,7 +486,7 @@ Terraform Applyと機能testが完了した時点で、状態を「実装済み�
 | TH-05 | 監査ログの停止・削除・改ざん | 6（高） | 2（低） | Phase 4、6 |
 | TH-06 | 意図しないApplyとコード・Provider改ざん | 6（高） | 2（低） | 全Phase、Phase 8 |
 | TH-07 | S3 bucketの意図しない公開 | 6（高） | 3（中） | Phase 3〜6 |
-| TH-08 | KMS keyの誤設定・無効化・削除 | 対象resource未構築 | 2（低） | Phase 3、8 |
+| TH-08 | KMS keyの誤設定・無効化・削除 | 共有key稼働中・再評価待ち | 2（低、目標値） | Phase 3、8 |
 | TH-09 | 不正利用・誤操作による想定外の課金 | 4（中） | 2（低） | 全Phase |
 | TH-10 | Network設定不備による意図しない通信許可 | 対象resource未構築 | 3（中） | Phase 7 |
 
