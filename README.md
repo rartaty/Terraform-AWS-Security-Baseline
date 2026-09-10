@@ -5,7 +5,7 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 
 ## Status
 
-設計・構築中（Phase 0〜3・5 完了、Phase 4 は一部実装済み、Phase 6 は技術検証済み）
+設計・構築中（2026-09-10同期：Phase 0〜2・5 完了、Phase 3 はalias判断待ち、Phase 4 は一部実装済み、Phase 6 は実装済み・検証記録整理中）
 
 ## Roadmap
 
@@ -14,15 +14,18 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 | 0 | Terraformプロジェクト基盤 | 完了 |
 | 1 | AWS認証・実行Role・S3 backend | 完了 |
 | 2 | コストガードレール（AWS Budgets） | 完了 |
-| 3 | 共通セキュリティ基盤（KMS・S3保護） | 完了（KMS・アカウントレベルS3公開防止を実装・検証済み） |
-| 4 | 監査ログ（CloudTrail） | 一部実装済み（CloudTrail・専用S3・KMS連携は稼働済み、HTTPS必須化・CloudWatch Logs連携は未実装） |
+| 3 | 共通セキュリティ基盤（KMS・S3保護） | KMS・S3公開防止は実装済み。計画上のaliasは未実装・採否判断待ち |
+| 4 | 監査ログ（CloudTrail） | 一部実装済み。CloudTrail用S3のHTTPS必須化が残作業。CloudWatch Logs転送はADR 0005で見送り |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 完了 |
-| 6 | 構成・コンプライアンス管理（AWS Config） | 実装・技術検証済み（実料金は継続観測） |
+| 6 | 構成・コンプライアンス管理（AWS Config） | 実装済み。主要動作確認済み、一部検証・記録と費用観測が残る |
 | 7 | ネットワーク検証（VPC・Flow Logs） | 未着手 |
 | 8 | 統合試験・証跡・後片付け・文書化 | 未着手 |
 
 Phaseごとの目的、完了条件、依存関係は `docs/02_architecture.md`、
 料金見積りと課金前の確認事項は `docs/04_cost_design.md` を参照する。
+
+残作業の分類と確認範囲は [試験・確認状況](docs/05_test_plan.md) を参照する。
+実装済み、コード確認済み、利用者から結果共有済み、未検証を区別する。
 
 ## Environments
 
@@ -36,10 +39,10 @@ Phaseごとの目的、完了条件、依存関係は `docs/02_architecture.md`�
 - AWS KMS
 - AWS Config
 - Amazon GuardDuty
-- AWS Security Hub CSPM
+- AWS Security Hub Essentials / CSPM
 - IAM Access Analyzer
-- Amazon VPC
-- VPC Flow Logs
+- Amazon VPC（Phase 7予定）
+- VPC Flow Logs（Phase 7予定）
 
 ## Directory structure
 
