@@ -486,7 +486,7 @@ Terraform Applyと機能testが完了した時点で、状態を「実装済み�
 | TH-05 | 監査ログの停止・削除・改ざん | 6（高） | 2（低） | Phase 4、6 |
 | TH-06 | 意図しないApplyとコード・Provider改ざん | 6（高） | 2（低） | 全Phase、Phase 8 |
 | TH-07 | S3 bucketの意図しない公開 | 6（高） | 3（中） | Phase 3〜6 |
-| TH-08 | KMS keyの誤設定・無効化・削除 | 共有key稼働中・再評価待ち | 2（低、目標値） | Phase 3、8 |
+| TH-08 | KMS keyの誤設定・無効化・削除 | 3（中） | 2（低） | Phase 3、8 |
 | TH-09 | 不正利用・誤操作による想定外の課金 | 4（中） | 2（低） | 全Phase |
 | TH-10 | Network設定不備による意図しない通信許可 | 対象resource未構築 | 3（中） | Phase 7 |
 
