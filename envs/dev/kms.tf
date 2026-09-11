@@ -133,8 +133,6 @@ data "aws_iam_policy_document" "security_logs_key_policy" {
       "kms:TagResource",
       "kms:UntagResource",
       "kms:EnableKey",
-      "kms:DisableKey",
-      "kms:ScheduleKeyDeletion",
       "kms:CancelKeyDeletion"
     ]
 
