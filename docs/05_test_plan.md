@@ -1,9 +1,9 @@
 # 試験計画・確認状況と残作業
 
-- 同期日: 2026-09-10
+- 同期日: 2026-09-11
 - 対象: dev環境、Phase 3〜6を中心とした現行構成
 - 根拠: Terraformコード、ADR、利用者が共有した実行結果、非公開作業記録
-- 今回の文書同期ではAWS実環境へ再照会していない。現在の稼働を再検証した記録ではない。
+- KMS権限縮小については2026-09-11に利用者が共有したAWSコンソール確認とTerraform実行結果を反映した。それ以外の項目は今回AWS実環境へ再照会していない。
 
 ## 1. 状態の定義
 
@@ -26,7 +26,7 @@
 |---|---|---|
 | KMS alias | 2026-09-11に不採用を決定 | CloudTrail・Configは固定したkey ARNを直接参照する。ADR 0009を参照 |
 | CloudWatch Logs転送 | ADR 0005で見送り済み | 今回の完了条件から除外。再採用する場合だけ目的・料金・監視要件を再判断する |
-| KMS残存riskと復旧手順 | 共有keyが稼働中。従来の未構築扱いは不適切 | 現行管理権限、CloudTrail・Config双方への影響、復旧手順を評価する。対策追加の要否はその後に判断する |
+| KMS残存riskと復旧手順 | 破壊的権限縮小を適用し、残存riskを中へ再評価 | 稼働中keyを用いた破壊的復旧試験は行わず、Phase 8で手順確認の範囲を判断する |
 
 ## 4. 未検証・未観測の事項
 
@@ -36,7 +36,6 @@
 | MFAなしのAssumeRole拒否 | MFA必須条件をコード確認。MFA付き成功は結果共有済み | negative testは未確認。MFA付き成功と区別して記録する |
 | Configuration Item数・Rule評価数・実料金 | 少数resourceの概算のみ | 計測期間・集計範囲を決めて観測し、ADR 0008と費用設計の見積りを更新する |
 | 現在のIAM権限全体 | コード管理部分と一部手動変更の報告のみ | リスク再評価時に、手動管理policy・trust・権限合成を含め確認する。今回の文書照合で全AWS権限を監査済みとはしない |
-| KMS破壊的権限の縮小 | Terraformコードから`DisableKey`と`ScheduleKeyDeletion`を除去済み | Key Policy更新に必要な`PutKeyPolicy`を一時付与してapplyし、IAM Permissions Policy側からも同Actionを除去する。`CancelKeyDeletion`と`EnableKey`は復旧用に残す |
 
 ## 5. 確認済みで記録整理が必要な事項
 
@@ -51,6 +50,7 @@
 | Resource Timeline | 初期Configuration eventとCompliance eventを確認。既存設定からの意図的な変更前後比較は未検証 |
 | 権限制御 | MFA付きAssumeRoleと対象prefix一覧は成功。DescribeKey、Decrypt、別RoleへのAssumeRole、対象外prefix一覧はAccessDenied |
 | Terraform整合 | 利用者からapply成功とNo changesの結果共有済み。現在の再planは今回未実施 |
+| KMS破壊的権限の縮小 | Key Policyから`DisableKey`と`ScheduleKeyDeletion`を除去し、`CancelKeyDeletion`と`EnableKey`の残存を確認。一時的な`PutKeyPolicy`を撤去し、最終planはNo changes |
 
 AccessDeniedという結果だけから、拒否原因が必ず特定のexplicit Denyだったと断定しない。
 policyの静的確認とエラーで確認できたAction、実行Role、対象を対応させて記録する。
@@ -63,5 +63,7 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 - Phase 8の統合試験・復旧・後片付けは別途計画する。この文書は全Phaseの試験仕様が完成したことを意味しない。
 
 ## Activity Log
+
+- 2026-09-11: KMS破壊的権限の縮小について、AWS適用、Key Policy確認、一時権限撤去、最終No changesを反映した。
 
 - 2026-09-10: コード・ADR・共有結果を照合し、追加実装、採否判断、未検証・未観測、記録不足を分類。AWS設定・Terraformコードの変更や試験実行は行っていない。
