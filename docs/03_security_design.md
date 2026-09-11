@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-27
-- 最終更新日: 2026-09-10
+- 最終更新日: 2026-09-11
 - 対象: 個人所有の単一AWSアカウント、dev環境、ap-northeast-1
 
 ## 1. 目的
@@ -75,7 +75,7 @@ access制御、保持期間および監視停止の検知を設計する。
 ### A-05: AWS resourceとsecurity設定
 
 IAM Role・Policy、S3 bucket、AWS Budgetおよび、
-今後構築する監査・検知serviceの設定を保護対象とする。
+構築済みのCloudTrail・GuardDuty・Security Hub・AWS Configの設定を保護対象とする。
 
 これらは、access制御、stateの保護、費用の監視、
 AWS操作の記録および異常の検知を実現するためのresourceである。
@@ -97,7 +97,7 @@ AWS Consoleで手動変更した場合は、変更理由を記録し、
 - 公開GitHub repositoryおよびローカル環境で管理するTerraformコードと設計文書
 - 個人所有の単一AWSアカウント、dev環境、`ap-northeast-1`のAWS resource
 - Terraform stateを保存するS3 backendと、stateを読み書きする通信経路
-- AWS Budgetおよび本プロジェクトで構築予定のIAM、監査、検知に関するresource
+- AWS Budgetおよび本プロジェクトで構築済みのIAM、監査、検知に関するresource
 
 ### 3.2 対象に含めないもの
 
@@ -130,9 +130,11 @@ AWSのsign-inとMFAを経て一時認証情報を取得する。
 `aws login`で認証したIAM userは、
 TerraformExecutionRoleを引き受けるためにAWS STSへ`AssumeRole`を要求する。
 
-AWSは、IAM user側に`sts:AssumeRole`の許可があることと、
-Roleのtrust policyがそのIAM userを信頼していることの両方を確認する。
-両方が成立した場合に、Role用の一時認証情報が発行される。
+AWSはRoleのtrust policy、呼出元の権限および該当する制限を評価する。
+同一accountのIAM user ARNをTrust Policyで直接許可する場合は、user側の追加Allowを
+必要としない場合があるため、「常に両側のAllowが必須」とは扱わない。
+本構成では対象PrincipalとMFA条件、明示的Denyを含めて確認する。
+[AWS Principalの仕様](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html)を参照する。
 
 この境界では、trust policyの対象が広すぎること、
 IAM userが不要なRoleを引き受けられること、
@@ -212,7 +214,7 @@ flowchart LR
     ROLE["TerraformExecutionRole"]
     S3["S3 backend"]
     API["AWS Control Plane"]
-    LOGS["監査・検知service（構築予定）"]
+    LOGS["CloudTrail・GuardDuty・Security Hub・AWS Config"]
   end
 
   GH["公開GitHub repository"]
@@ -296,7 +298,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | phishingやPCの侵害により、有効期限内のIAM userまたはTerraformExecutionRoleの一時認証情報が盗まれ、第三者が正規利用者としてAWS APIを実行する |
 | 影響 | Roleのpermission範囲内で、stateの読み書き、AWS resourceやsecurity設定の変更、想定外のresource作成が行われる可能性がある |
 | 既存control | root userとIAM userへのMFA、長期access keyの不使用、`aws login`による一時認証情報、IAM userとTerraformExecutionRoleの分離、Role permissionのresource制限 |
-| 追加予定control | CloudTrailによる操作記録、GuardDutyによる不審な認証情報利用の検知、IAM permissionの定期確認 |
+| 実装反映・追加予定control | CloudTrailによる操作記録とGuardDutyの基礎検知は実装済み。IAM permissionの定期確認、侵害sessionの失効・復旧手順は継続整備する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性2 × 影響度2 = 4（中） |
@@ -477,6 +479,15 @@ Terraform Applyと機能testが完了した時点で、状態を「実装済み�
 
 ## 10. Risk一覧と対応優先度
 
+CloudTrail・Config用S3の「30日保持」は、現行versionの期限切れ30日と非現行化から削除30日の組合せを指す。
+保存から30日での物理削除を保証せず、Versioningは改ざん防止のWORM機能ではない。
+
+ConfigEvidenceReadRoleは対象KMS keyへのkms:*と別RoleへのAssumeRoleを明示的に拒否する。
+S3書込みは現在のAllow不在による制限であり、将来のAllow追加に対する上限は固定していない。
+2026-09-11のS3 identity policy・MFA条件のSimulation結果と、未実施の実API試験は[試験計画](05_test_plan.md)を参照する。
+KMS Key Policyのaccount root ARNはroot userだけに限定する指定ではないため、
+recovery経路とIAM側のPutKeyPolicy許可を合わせて確認する。手動IAM全体の監査は残作業である。
+
 | 脅威ID | 概要 | 現在の残存risk | 目標残存risk | 主な対応Phase |
 |---|---|---|---|---|
 | TH-01 | 一時認証情報の窃取となりすまし | 6（高） | 4（中） | Phase 4、5 |
@@ -490,7 +501,8 @@ Terraform Applyと機能testが完了した時点で、状態を「実装済み�
 | TH-09 | 不正利用・誤操作による想定外の課金 | 4（中） | 2（低） | 全Phase |
 | TH-10 | Network設定不備による意図しない通信許可 | 対象resource未構築 | 3（中） | Phase 7 |
 
-現在「高」のriskは、後続Phaseのcontrolが未実装であることを反映している。
+現在「高」のriskは、未実装の対策に加え、実装済みcontrolでは防ぎきれない管理権限侵害などを反映している。
+今回の文書同期だけで既存risk scoreを自動的に引き下げない。
 本番workloadとbusiness dataを配置しない条件で一時的に受容し、
 対応Phaseの完了時に再評価する。
 

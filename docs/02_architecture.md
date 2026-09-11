@@ -101,6 +101,7 @@ Phase 8  統合試験・証跡・後片付け・文書化
 - 実績額が1、3、5、8、10 USDを超えた場合のEメール通知を設定した。
 - クレジット、返金、税、Support料金を予算計算から除外した。
 - 通知先はGit管理外の`terraform.tfvars`に保存し、公開可能なexampleにはダミー値だけを記載した。
+- ADR 0003に基づき、実績10 USDでTerraformExecutionRoleへ高額作成抑止Policyを自動attachするBudget Actionを実装した。Action用Roleと対象Policyは手動管理である。
 - 新しいOutlookとWindows 11の通知を有効化し、通常メールによるデスクトップ通知経路を確認した。
 - Terraform AWS Providerが実行Roleを確実に使用するよう、ProviderにもAWS profileを明示した。
 
@@ -111,6 +112,7 @@ Phase 8  統合試験・証跡・後片付け・文書化
 - 1週間の想定上限を3 USDとし、10 USDは明確な異常として調査・停止判断を行える段階値にした。
 - 利用履歴が少ない段階では予測通知の精度を期待できないため、初期構成は実績額通知だけにした。
 - 料金情報の反映遅延と誤停止の危険があるため、自動停止・自動削除は設定しなかった。
+- Budget Actionが抑止するのは対象Policyに列挙された新規作成操作であり、稼働中resourceの課金は継続する。しきい値到達による発火試験は未実施である。
 
 完了条件:
 
@@ -197,9 +199,9 @@ HTTPS必須化を適用した。apply後の`No changes`、`IsLogging=True`、
 
 ### Phase 6: 構成・コンプライアンス管理
 
-2026-09-10時点: ADR 0008の10種類の継続記録、専用S3、共有KMS、7 Managed Rules、
-ConfigEvidenceReadRoleを実装済み。主要動作の結果は共有済みだが、全完了条件を検証済みとはしない。
-S3変更操作の拒否確認と利用量・実料金観測、既存結果の記録整理は [試験計画](05_test_plan.md) で区別する。
+2026-09-11時点: ADR 0008の10種類の継続記録、専用S3、共有KMS、7 Managed Rules、
+ConfigEvidenceReadRoleを実装済み。dev planはNo changes、Recorder稼働、Snapshot/History配送成功、7 RuleすべてCOMPLIANTを再確認した。
+S3 identity policy・MFA条件単体はSimulation確認済み。実APIによる拒否試験の未実施範囲と利用量・実料金観測は [試験計画](05_test_plan.md) で管理する。
 
 目的:
 

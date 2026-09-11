@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-25
-- 更新日: 2026-09-10（構成前提の同期。料金表の再調査ではない）
+- 更新日: 2026-09-11（構成前提の同期。料金表の再調査ではない）
 - 対象リージョン: `ap-northeast-1`（東京）
 
 ## 1. 結論
@@ -72,6 +72,7 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 - クレジットと返金によって実際の利用規模が隠れないよう、予算計算から除外する。
 - 税とSupport料金はAWSリソース利用額の監視対象ではないため除外する。
 - Budget Actionによる自動停止・自動削除は使用しない。
+- ADR 0003に基づくBudget Actionは実装済み。実績10 USDでTerraformExecutionRoleへ高額作成抑止Policyを自動attachする。既存resourceの稼働・課金は止まらず、拒否対象外の操作や別identityには適用されない。
 - SNSとBudget Reportsは初期構成では使用しない。
 - action-enabled budgetは最初の2件まで無料で、追加分には日額料金がある。
 - Budget Reportsは有料なので本件では使わない。
@@ -122,7 +123,8 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 - configuration item、Config rule評価、conformance pack評価が課金対象である。
 - 継続記録ではconfiguration item数、定期記録では記録resource数と日数が費用に影響する。
 - 記録対象を必要なresource typeに限定し、少数のmanaged ruleから開始する。
-- Phase 6の`plan`前に「対象resource type数 × 想定resource数 × 評価頻度」で再計算する。
+- 現行構成は10 resource typeのCONTINUOUS記録と7 Managed Rules。記録料金は実際のConfiguration Item数、評価料金はRuleごとの対象resource数・評価回数で見積もる。両者を単一の掛け算で算定しない。
+- CloudTrail・Config用S3は現行versionの期限切れが30日、非現行化後の削除が30日。保存から30日で物理削除される設定ではなく、非現行versionも保存料金に含まれる。
 
 ### Amazon VPCとVPC Flow Logs
 

@@ -1,5 +1,8 @@
 # AI Agent Control Loop Design
 
+- 状態: 将来の別application向け設計案（2026-09-11照合）。この文書のMock Financial API、AI Runtime、Kill Switch、専用SSM/CloudWatch Logsは本repositoryの現行Terraformには実装されていない。
+- Phase 0〜8のSecurity Baselineとは範囲を分け、採用・実装する際に要件と費用を改めて決める。本書のテストケースは未実施である。
+
 ## 0. 目的
 
 本ドキュメントは、Financial API Security Baseline on AWS with Terraform における **AIエージェントのループ処理（Control Loop）** を定義する。
