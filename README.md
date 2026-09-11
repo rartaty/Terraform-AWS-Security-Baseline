@@ -5,7 +5,7 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 
 ## Status
 
-設計・構築中（2026-09-11同期：Phase 0〜5 完了、Phase 6 は実装済み・検証記録整理中）
+設計・構築中（2026-09-11同期：Phase 0〜5 完了、Phase 6 は実装・主要動作確認済み。実API試験範囲の判断と費用観測が残る）
 
 ## Roadmap
 
@@ -17,7 +17,7 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 | 3 | 共通セキュリティ基盤（KMS・S3保護） | 完了。aliasは不採用。通常RoleからKMS keyの無効化・削除予約権限を除去し、AWS適用後のNo changesを確認済み |
 | 4 | 監査ログ（CloudTrail） | 完了。CloudTrail用S3のHTTPS必須化、配送継続、No changesを確認済み。CloudWatch Logs転送はADR 0005で見送り |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 完了 |
-| 6 | 構成・コンプライアンス管理（AWS Config） | 実装済み。主要動作確認済み、一部検証・記録と費用観測が残る |
+| 6 | 構成・コンプライアンス管理（AWS Config） | Recorder・配送成功、7 RuleすべてCOMPLIANT、dev planはNo changes。S3権限・MFA条件はSimulation確認済み。実API試験の未実施範囲と費用観測は試験計画参照 |
 | 7 | ネットワーク検証（VPC・Flow Logs） | 未着手 |
 | 8 | 統合試験・証跡・後片付け・文書化 | 未着手 |
 
