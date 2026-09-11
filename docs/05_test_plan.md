@@ -24,7 +24,7 @@
 
 | 項目 | 状態 | 次の判断 |
 |---|---|---|
-| KMS alias | 当初計画にあるがコードにない | 追加するか今回対象外とするかを利用者が判断する。不要と決めたことにはしない |
+| KMS alias | 2026-09-11に不採用を決定 | CloudTrail・Configは固定したkey ARNを直接参照する。ADR 0009を参照 |
 | CloudWatch Logs転送 | ADR 0005で見送り済み | 今回の完了条件から除外。再採用する場合だけ目的・料金・監視要件を再判断する |
 | KMS残存riskと復旧手順 | 共有keyが稼働中。従来の未構築扱いは不適切 | 現行管理権限、CloudTrail・Config双方への影響、復旧手順を評価する。対策追加の要否はその後に判断する |
 
@@ -36,6 +36,7 @@
 | MFAなしのAssumeRole拒否 | MFA必須条件をコード確認。MFA付き成功は結果共有済み | negative testは未確認。MFA付き成功と区別して記録する |
 | Configuration Item数・Rule評価数・実料金 | 少数resourceの概算のみ | 計測期間・集計範囲を決めて観測し、ADR 0008と費用設計の見積りを更新する |
 | 現在のIAM権限全体 | コード管理部分と一部手動変更の報告のみ | リスク再評価時に、手動管理policy・trust・権限合成を含め確認する。今回の文書照合で全AWS権限を監査済みとはしない |
+| KMS破壊的権限の縮小 | Terraformコードから`DisableKey`と`ScheduleKeyDeletion`を除去済み | Key Policy更新に必要な`PutKeyPolicy`を一時付与してapplyし、IAM Permissions Policy側からも同Actionを除去する。`CancelKeyDeletion`と`EnableKey`は復旧用に残す |
 
 ## 5. 確認済みで記録整理が必要な事項
 

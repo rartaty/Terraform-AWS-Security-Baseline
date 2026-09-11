@@ -120,8 +120,8 @@ Phase 8  統合試験・証跡・後片付け・文書化
 
 ### Phase 3: 共通セキュリティ基盤
 
-2026-09-10時点: KMS keyとアカウントレベルS3公開防止は実装済み。
-当初計画のaliasは未実装であり、追加するか今回対象外とするかは判断待ち。
+2026-09-11時点: KMS keyとアカウントレベルS3公開防止は実装済み。
+当初計画のaliasは、固定したkey ARNを直接参照する単純性を優先して不採用とした（ADR 0009）。
 KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
 
 目的:
@@ -130,7 +130,7 @@ KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
 
 予定内容:
 
-- customer managed KMS keyとaliasを作成する。
+- customer managed KMS keyを作成する。aliasはADR 0009により採用しない。
 - key policy、rotation、削除待機期間を設計する。
 - アカウントレベルのS3 Block Public Accessを有効化する。
 
