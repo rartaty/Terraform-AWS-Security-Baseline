@@ -3,7 +3,7 @@
 - 同期日: 2026-09-11
 - 対象: dev環境、Phase 3〜6を中心とした現行構成
 - 根拠: Terraformコード、ADR、利用者が共有した実行結果、非公開作業記録
-- KMS権限縮小については2026-09-11に利用者が共有したAWSコンソール確認とTerraform実行結果を反映した。それ以外の項目は今回AWS実環境へ再照会していない。
+- KMS権限縮小については2026-09-11に利用者が共有したAWSコンソール確認とTerraform実行結果を反映した。Phase 6のnegative testは同日にAWS IAM Policy Simulatorで再評価し、一時的なSimulation権限の撤去まで確認した。それ以外の項目は今回AWS実環境へ再照会していない。
 
 ## 1. 状態の定義
 
@@ -31,8 +31,6 @@
 
 | 項目 | 現在確認できること | 残作業 |
 |---|---|---|
-| ConfigEvidenceReadRoleのS3変更拒否 | コードに書込み・削除・設定変更のAllowがない | ADR 0008の実拒否確認結果は未確認。対象と安全な方法を合意して検証する。実データの削除・上書きを試験として勝手に実行しない |
-| MFAなしのAssumeRole拒否 | MFA必須条件をコード確認。MFA付き成功は結果共有済み | negative testは未確認。MFA付き成功と区別して記録する |
 | Configuration Item数・Rule評価数・実料金 | 少数resourceの概算のみ | 計測期間・集計範囲を決めて観測し、ADR 0008と費用設計の見積りを更新する |
 | 現在のIAM権限全体 | コード管理部分と一部手動変更の報告のみ | リスク再評価時に、手動管理policy・trust・権限合成を含め確認する。今回の文書照合で全AWS権限を監査済みとはしない |
 
@@ -47,7 +45,8 @@
 | 実object暗号化 | HeadObjectのaws:kms、ExpectedKeyMatch=True |
 | 7 Managed Rules | 最初の6件COMPLIANT、account BPAは定期評価版への変更後COMPLIANT。7件同時の再取得を今回行ったとはしない |
 | Resource Timeline | 初期Configuration eventとCompliance eventを確認。既存設定からの意図的な変更前後比較は未検証 |
-| 権限制御 | MFA付きAssumeRoleと対象prefix一覧は成功。DescribeKey、Decrypt、別RoleへのAssumeRole、対象外prefix一覧はAccessDenied |
+| 権限制御 | MFA付きAssumeRoleと対象prefix一覧は成功。DescribeKey、Decrypt、別RoleへのAssumeRole、対象外prefix一覧はAccessDenied。Policy SimulationではS3 GetObject=allowed、PutObject/DeleteObject=implicitDeny。Trust Policyと同じMFA条件はfalse=implicitDeny、true=allowed。Role Trust Policy自体は[AWS公式記載のSimulator制約](https://docs.aws.amazon.com/IAM/latest/UserGuide/policies_policy-simulator-how-to.html)により直接評価していない |
+| negative test用一時権限の撤去 | `iam:SimulateCustomPolicy`と`iam:SimulatePrincipalPolicy`を一時付与して評価後に削除。Simulation APIが再びAccessDeniedとなることを確認 |
 | Terraform整合 | 利用者からapply成功とNo changesの結果共有済み。現在の再planは今回未実施 |
 | KMS破壊的権限の縮小 | Key Policyから`DisableKey`と`ScheduleKeyDeletion`を除去し、`CancelKeyDeletion`と`EnableKey`の残存を確認。一時的な`PutKeyPolicy`を撤去し、最終planはNo changes |
 | CloudTrail用S3のHTTPS必須化 | `DenyInsecureTransport`を適用。最終planはNo changes、CloudTrailはLogging=True、直近配送時刻あり、配送errorなし |
@@ -66,5 +65,6 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 
 - 2026-09-11: KMS破壊的権限の縮小について、AWS適用、Key Policy確認、一時権限撤去、最終No changesを反映した。
 - 2026-09-11: CloudTrail用S3のHTTPS必須化を適用し、Terraform整合とログ配送継続の確認結果を反映した。
+- 2026-09-11: Phase 6のMFA条件とS3読取り専用境界をPolicy Simulatorでnegative testし、一時的なSimulation権限の撤去まで確認した。Role Trust Policy自体はSimulator非対応のため、MFA条件を同等のテストPolicyでfalse/true評価した。
 
 - 2026-09-10: コード・ADR・共有結果を照合し、追加実装、採否判断、未検証・未観測、記録不足を分類。AWS設定・Terraformコードの変更や試験実行は行っていない。
