@@ -415,9 +415,9 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | key policyの誤設定で想定外のPrincipalへ利用・管理権限を与える、必要なserviceが暗号鍵を使用できなくなる、またはkeyを無効化・削除予約する |
 | 影響 | ログの暗号化・復号ができなくなり、監査serviceの配信停止、保存済み証跡の利用不能、不正な復号につながる可能性がある |
 | 既存control | CloudTrail・Config共有のcustomer managed KMS key、用途を限定したkey policy、rotation、30日削除待機、Terraformの`prevent_destroy`。TerraformExecutionRoleへの直接のPutKeyPolicy許可を除去。証跡閲覧Roleでは対象keyのkms:*を明示的Deny。stateはSSE-S3であり共有keyに依存しない |
-| 実装反映・追加予定control | aliasは不採用。TerraformExecutionRoleから`kms:DisableKey`と`kms:ScheduleKeyDeletion`を外し、復旧用の`kms:CancelKeyDeletion`と`kms:EnableKey`は残す変更をコードへ反映済み・AWS適用待ち。復旧手順の実環境試験はPhase 8まで行わない |
+| 実装反映・追加予定control | aliasは不採用。TerraformExecutionRoleから`kms:DisableKey`と`kms:ScheduleKeyDeletion`を外し、復旧用の`kms:CancelKeyDeletion`と`kms:EnableKey`は残した。2026-09-11にAWS適用、Key Policy確認、一時的な`kms:PutKeyPolicy`撤去、No changes確認まで完了。復旧手順の実環境試験はPhase 8まで行わない |
 | 固有risk | 発生可能性2 × 影響度3 = 6（高） |
-| 現在の残存risk | 発生可能性2 × 影響度3 = 6（高）。通常Roleに停止・削除予約権限が残るAWS実体を基準とする。権限縮小のapplyとeffective permission確認後に再評価する |
+| 現在の残存risk | 発生可能性1 × 影響度3 = 3（中）。通常Roleによる停止・削除予約経路は縮小したが、権限管理者またはaccount recovery経路が侵害されKey Policyを再変更された場合の影響は大きい |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
 | 残存risk | key policyを変更できる管理権限の侵害と、削除待機期間経過後のkey material消失は完全には防止できない |
 
@@ -463,7 +463,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-02 | IAM userとTerraformExecutionRoleの分離、限定したtrust policyとpermission | TH-01、TH-04、TH-09 | 一部実装・継続見直し | Phase 1〜8 |
 | C-03 | 非公開・暗号化・versioning・HTTPS必須・lockfileを備えたS3 backend | TH-02、TH-07 | 実装済み | Phase 1 |
 | C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
-| C-05 | アカウントレベルS3 Block Public Access、CloudTrail・Config共有customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み（alias不採用、破壊的権限縮小は適用待ち） | Phase 3〜6 |
+| C-05 | アカウントレベルS3 Block Public Access、CloudTrail・Config共有customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み（alias不採用、通常Roleの破壊的権限縮小も適用・確認済み） | Phase 3〜6 |
 | C-06 | multi-region CloudTrail、management events、専用S3、SSE-KMS、30日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装済み（CloudWatch Logs転送は別途判断） | Phase 4 |
 | C-07 | GuardDuty Foundational Threat Detectionによる不審な操作・認証情報利用の検知。対象外のProtection Planは明示的に無効化 | TH-01、TH-09 | 実装済み | Phase 5 |
 | C-08 | IAM Access Analyzerのexternal access analyzer、Security Hub Essentials・CSPM・AWS Foundational Security Best Practicesによる外部公開・設定不備の検知 | TH-04、TH-07、TH-10 | 実装済み（Automation Rules・自動修復・有料addonは未採用） | Phase 5 |

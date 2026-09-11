@@ -123,6 +123,8 @@ Phase 8  統合試験・証跡・後片付け・文書化
 2026-09-11時点: KMS keyとアカウントレベルS3公開防止は実装済み。
 当初計画のaliasは、固定したkey ARNを直接参照する単純性を優先して不採用とした（ADR 0009）。
 KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
+通常の`TerraformExecutionRole`から`kms:DisableKey`と`kms:ScheduleKeyDeletion`を除去し、
+一時的な`kms:PutKeyPolicy`の撤去とapply後の`No changes`を確認したため、Phase 3は完了とする。
 
 目的:
 
