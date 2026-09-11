@@ -15,7 +15,7 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 | 1 | AWS認証・実行Role・S3 backend | 完了 |
 | 2 | コストガードレール（AWS Budgets） | 完了 |
 | 3 | 共通セキュリティ基盤（KMS・S3保護） | 完了。aliasは不採用。通常RoleからKMS keyの無効化・削除予約権限を除去し、AWS適用後のNo changesを確認済み |
-| 4 | 監査ログ（CloudTrail） | 一部実装済み。CloudTrail用S3のHTTPS必須化が残作業。CloudWatch Logs転送はADR 0005で見送り |
+| 4 | 監査ログ（CloudTrail） | CloudTrail用S3のHTTPS必須化をコードへ反映済み・AWS適用待ち。CloudWatch Logs転送はADR 0005で見送り |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 完了 |
 | 6 | 構成・コンプライアンス管理（AWS Config） | 実装済み。主要動作確認済み、一部検証・記録と費用観測が残る |
 | 7 | ネットワーク検証（VPC・Flow Logs） | 未着手 |

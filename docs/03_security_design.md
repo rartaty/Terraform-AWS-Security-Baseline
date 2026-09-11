@@ -364,7 +364,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | 認証情報を取得した第三者または誤操作により、CloudTrailの記録が停止される、ログ保存先や転送設定が変更される、または保存済みログが削除・改ざんされる |
 | 影響 | 誰が、いつ、どのAWS APIを実行したか確認できず、security incidentの発生範囲・原因・影響を調査できなくなる |
 | 既存control | IAM userとTerraformExecutionRoleの分離、TerraformコードとGitによる設定変更履歴、multi-region CloudTrailによるmanagement events記録、専用S3 bucket、公開防止、versioning、30日保持、Log File Validation、customer managed KMS key、CloudTrailLogReadRoleによる限定閲覧 |
-| 実装反映・追加予定control | AWS Configによる選択resourceの構成変更記録は実装済み。CloudTrail用S3のHTTPS必須化は未実装。CloudWatch Logs転送はADR 0005で見送り、必要時に再判断する |
+| 実装反映・追加予定control | AWS Configによる選択resourceの構成変更記録は実装済み。CloudTrail用S3のHTTPS必須化はTerraformコードへ反映済み・AWS適用待ち。CloudWatch Logs転送はADR 0005で見送り、必要時に再判断する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
