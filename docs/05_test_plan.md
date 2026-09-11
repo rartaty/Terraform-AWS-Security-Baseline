@@ -17,7 +17,7 @@
 
 | 項目 | 現状 | 完了に必要な作業 |
 |---|---|---|
-| CloudTrail用S3のHTTPS必須化 | bucket policyにSecureTransportによる拒否がない | 設計済み要件に沿うpolicy追加、plan確認、apply、配信が継続することとpolicyの検証。今回は実装しない |
+| CloudTrail用S3のHTTPS必須化 | `aws:SecureTransport=false`を拒否するbucket policyをコードへ反映済み | plan確認、apply、policy実体確認、CloudTrail配信継続確認を行う |
 | Phase 7のVPC・Flow Logs | 未着手 | 別Phaseとして設計・構築・検証する |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
