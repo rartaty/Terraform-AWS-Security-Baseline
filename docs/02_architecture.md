@@ -168,8 +168,9 @@ KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
 - 実際の管理イベントがS3へ届く。CloudWatch Logs配送は現在の完了条件に含めない。
 - 保存データが公開されず、意図したKMS keyで暗号化される。
 
-2026-09-10時点: CloudTrail・S3配送・KMS連携は確認済み。
-CloudTrail用S3のHTTPS必須化は未実装であり、追加実装と検証が必要。
+2026-09-11時点: CloudTrail・S3配送・KMS連携に加え、CloudTrail用S3の
+HTTPS必須化を適用した。apply後の`No changes`、`IsLogging=True`、
+直近配送時刻の更新および配送errorなしを確認したため、Phase 4は完了とする。
 
 ### Phase 5: セキュリティ検知
 

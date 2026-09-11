@@ -17,7 +17,6 @@
 
 | 項目 | 現状 | 完了に必要な作業 |
 |---|---|---|
-| CloudTrail用S3のHTTPS必須化 | `aws:SecureTransport=false`を拒否するbucket policyをコードへ反映済み | plan確認、apply、policy実体確認、CloudTrail配信継続確認を行う |
 | Phase 7のVPC・Flow Logs | 未着手 | 別Phaseとして設計・構築・検証する |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
@@ -51,6 +50,7 @@
 | 権限制御 | MFA付きAssumeRoleと対象prefix一覧は成功。DescribeKey、Decrypt、別RoleへのAssumeRole、対象外prefix一覧はAccessDenied |
 | Terraform整合 | 利用者からapply成功とNo changesの結果共有済み。現在の再planは今回未実施 |
 | KMS破壊的権限の縮小 | Key Policyから`DisableKey`と`ScheduleKeyDeletion`を除去し、`CancelKeyDeletion`と`EnableKey`の残存を確認。一時的な`PutKeyPolicy`を撤去し、最終planはNo changes |
+| CloudTrail用S3のHTTPS必須化 | `DenyInsecureTransport`を適用。最終planはNo changes、CloudTrailはLogging=True、直近配送時刻あり、配送errorなし |
 
 AccessDeniedという結果だけから、拒否原因が必ず特定のexplicit Denyだったと断定しない。
 policyの静的確認とエラーで確認できたAction、実行Role、対象を対応させて記録する。
@@ -65,5 +65,6 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 ## Activity Log
 
 - 2026-09-11: KMS破壊的権限の縮小について、AWS適用、Key Policy確認、一時権限撤去、最終No changesを反映した。
+- 2026-09-11: CloudTrail用S3のHTTPS必須化を適用し、Terraform整合とログ配送継続の確認結果を反映した。
 
 - 2026-09-10: コード・ADR・共有結果を照合し、追加実装、採否判断、未検証・未観測、記録不足を分類。AWS設定・Terraformコードの変更や試験実行は行っていない。
