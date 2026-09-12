@@ -2,19 +2,20 @@
 
 - 状態: 採用
 - 制定日: 2026-08-25
-- 更新日: 2026-09-11（構成前提の同期。料金表の再調査ではない）
+- 更新日: 2026-09-12（条件付き概算・現行構成・終了方針を同期）
 - 対象リージョン: `ap-northeast-1`（東京）
 
 ## 1. 結論
 
 本プロジェクトを全Phaseまで小規模構成で稼働させた場合、
-通常時の計画値は **月額2～15 USD程度** とする。
-2026-08-25時点の計画換算レートを1 USD = 159円とすると、
-**月額約318～2,385円**である。
+低利用時の暫定計画値は **月額約3～6 USD** とする（下記モデルは2.30～5.90 USD）。
+これは一時EC2削除後、Baselineを後続学習のため一時保持する期間の月額であり実測値ではない。
+全学習終了後は完全削除し、本件由来の継続課金を残さない。削除前の利用料金まで消えるわけではない。
 
 これは請求額の保証ではない。AWSは従量課金であり、ログ量、APIイベント数、
 記録resource数、rule評価回数、無料トライアル、為替、税により変動する。
-安全側の管理上限として、AWS Budgetは **月額10 USD** とする。
+通知と追加作成抑止のしきい値として、AWS Budgetは **月額10 USD** とする。
+課金全体のhard capではなく、請求データ・Actionの反映遅延もある。
 実績額が1、3、5、8、10 USDを超えた場合に通知する。
 予測通知は利用履歴が十分に蓄積してから必要性を再評価する。
 
@@ -34,33 +35,39 @@
 
 前提から外れる変更を行う場合は、`terraform apply`より前に再見積りする。
 
-## 3. Phase別の月額見積り
+## 3. 現行構成を前提とする条件付き見積り
 
-以下の表と累計は2026-08-25の全Phase初期概算であり、現行構成の実測値ではない。
-CloudWatch Logs転送はADR 0005で見送り、VPC Flow LogsはPhase 7で設計合意済み・未実装である。
-Phase 6の採用構成に対する見積りはADR 0008の月額0.10～1.00 USD程度を参照する。
-表の0.10～5.00 USDは初期の広い概算として残す。いずれも上限保証ではなく、
-Configuration Item数・Rule評価数・実料金は未確認であり、確認後に表と累計を再見積りする。
+旧Phase別累計はCloudWatch Logsと一時費用が混在していたため置き換える。
+ADR 0008の初期概算も実測上限ではない。以下は無料trial・税・為替を除き、実利用量の代わりに
+仮定を置いた計画モデルである。東京Regionの全SKUを確定した見積りではなく、apply前に再確認する。
 
-金額は、そのPhaseで作成したリソースを1か月保持した場合の**追加月額**である。
-Phase作業そのものに固定料金があるわけではなく、作成後に残すAWSリソースと利用量で決まる。
+| 費目・Phase | 前提 | 月額USD |
+|---|---|---:|
+| KMS（3） | key 1本、追加rotation課金前 | 1.00 |
+| Security Hub IAM分（5） | 課金対象user／role 10～30個、3.75 / 125 × 個数 | 0.30～0.90 |
+| Config記録（6・7合算） | CONTINUOUSのCI 100～500件 × 0.003 | 0.30～1.50 |
+| Config評価（6・7合算） | 月500～1,500評価 × 0.001 | 0.50～1.50 |
+| 脅威分析（5） | 低利用時の仮置き予算。実ログ量未取得 | 0.10～0.50 |
+| 保存・配送・request（1・3・4・6・7合算） | S3、Flow Logs配送、KMS request等の仮置き予算 | 0.10～0.50 |
+| 合計 | 上記仮定の算術合計。上限保証ではない | 2.30～5.90 |
 
-| Phase | 主な課金要素 | 追加月額の計画値 | 累計月額の目安 | 判断 |
-|---|---|---:|---:|---|
-| 0 | ローカルTerraform、Git | 0 USD | 0 USD | AWSリソースを作らないため無料 |
-| 1 | state用S3の保存・request | 0～0.01 USD未満 | 0～0.01 USD未満 | stateが小さく、S3使用量がごく少ない |
-| 2 | AWS Budgets | 0 USD | 0～0.01 USD未満 | 標準の予算監視と通知を使用する |
-| 3 | customer managed KMS key、S3公開防止 | 1.00～1.10 USD | 約1.00～1.11 USD | KMS keyは1 USD/月、requestは小量想定 |
-| 4 | CloudTrail、ログS3、CloudWatch Logs | 0.10～1.50 USD | 約1.10～2.61 USD | 最初の管理イベントtrailは無料、保存・転送・ログ量は従量課金 |
-| 5 | GuardDuty、Security Hub、Access Analyzer | 0.10～3.00 USD | 約1.20～5.61 USD | 小規模・低イベントを想定。trial終了後を基準にする |
-| 6 | AWS Config、Config rule、保存S3 | 0.10～5.00 USD | 約1.30～10.61 USD | resource記録数とrule評価数が最大の変動要因 |
-| 7 | VPC Flow Logs、ログ保存、Config記録・Rule評価、一時EC2／EBS | 0～0.50 USD | 約1.30～11.11 USD | VPC論理部品は原則無料。EC2は2台を短時間だけ使用し、NAT・public IPv4は作らない |
-| 7.5 | AWS Network Firewall Endpoint、処理data、Firewall Log、一時test resource | apply前に別途見積り | 定常費用の追加なし | Optional Lab。1 AZで短期検証し、同日中にdestroyする。Phase 7の累計には含めない |
-| 8 | 一時的な試験操作・証跡 | 0～1.00 USD（一時的） | 定常費用の追加なし | 試験後に一時resourceを削除する |
+Phase 4は管理イベントの最初のコピーのTrail配信が0 USD、CloudWatch Logs転送は見送りで
+本件の当該利用料を0 USDとする。残るCloudTrail用S3保存・requestとKMS利用料は上の合算枠に含む。
+旧0.10～1.50 USDのPhase 4追加額を重ねて計上しない。Essentialsに含まれるCSPM等も重複加算しない。
+Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前提とする。
 
-表の単純合計は約1.30～11.11 USD/月だが、料金変更、計測単位、
-想定外のイベントを吸収するため、全体の対外的な計画値は丸めて2～15 USD/月とする。
-日本円は計画換算で約318～2,385円/月、消費税等は別である。
+### 一時試験費用（定常月額に含めない）
+
+- Phase 7: EC2 2台 × 時間 × 東京時間単価 ＋ EBS容量 × GB月単価 × 時間按分 ＋ ログ・Config・Security Hub等の増分。
+- instance type、AMI、EBS容量と時間を確定して積算する。試験1回1 USD以内は暫定目標であり自動停止額ではない。
+- Phase 7.5: Firewall Endpoint、処理data、ログ、一時resourceを別見積り・別承認とする。現時点で今回の合計へ算入しない。
+- Phase 8: 最終試験・証跡取得・削除に伴うrequest等を計上する。destroy後の既発生料金の後日反映を継続課金と混同しない。
+
+### 実測への置換（未実施）
+
+課金対象IAM数、月次CI数・評価数、GuardDuty使用量、S3容量・version・request、保持日数を取得する。
+短期間を月換算する場合は初回記録と平常変更を分離する。既存Default VPC等もConfigの対象になり得る。
+実測後に上の仮定を置換し、総費用は保持期間分＋一時試験＋削除時利用分で再計算する。
 
 ## 4. 各サービスの料金判断
 
@@ -84,6 +91,8 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 - 保存容量、PUT/GET等のrequest、データ転送などに従量課金される。
 - state、CloudTrail、Configの小規模ログだけなら少額だが、完全無料とは断定しない。
 - versioningにより古いobject versionも保存量に含まれるため、ログ保持期間とlifecycleを設計する。
+- CloudTrail・Config・予定Flow Logsは現行30日＋非現行30日。未更新objectは概ね60日後に完全削除対象となり、非現行期間も保存料金がかかる。UTC日付の丸め・非同期処理があり厳密な60日保証ではない。
+- 完全削除対象になった後のLifecycle処理遅延分は原則追加保存課金されない。学習終了時はLifecycle待ちにせず全versionを明示削除する。今回Lifecycleコードは変更しない。
 
 ### AWS KMS
 
@@ -97,7 +106,7 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 - Event historyは無料である。
 - trailによる管理イベントの最初のコピーはS3へ無料配信できる。
 - 追加の管理イベントコピー、データイベント、Insights、CloudTrail Lakeは有料なので初期対象外とする。
-- CloudWatch LogsへのCloudTrailイベント配信、保存、検索はデータ量に応じて課金される。
+- CloudWatch LogsへのCloudTrailイベント配信は見送り。本件の現行見積りでは当該取り込み・保存・検索料金を計上しない。将来採用時だけ再見積りする。
 
 ### Amazon GuardDuty
 
@@ -132,9 +141,10 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 - VPC、subnet、route table、Security Groupなどの論理部品には通常、個別の時間料金はない。
 - VPC Flow Logsは出力先のログ取り込み・保存料金が発生する。
 - Phase 7ではVPC全体の`ALL` trafficを最大10分で集約し、専用S3へ標準Text・Gzip形式で保存する。少量を前提とするが、上限料金ではない。
+- Nitro EC2のENIは指定にかかわらず実際の集約が1分以下になる。機能上の問題ではないが、10分設定によるログ削減を料金前提にしない。
 - 専用S3はSSE-S3、Versioning、現行・非現行versionとも30日Lifecycleとする。Flow Log objectは通常上書きしないが、Versioningを他のlog bucketと共通の保護層として採用する。
-- Phase 6のConfiguration Recorderへ7 resource type、Config Rulesへ3 Ruleを追加するため、Configuration ItemとRule評価の料金もわずかに増加する。
-- ACCEPT／REJECT試験では小さいEC2を2台と暗号化EBSを短時間だけ使用する。作成前にAMI、instance type、台数、予定時間および東京Regionの単価を確認し、S3到着後に削除する。
+- Phase 6へ7 resource type・3 Ruleを追加予定。既存resourceも対象になり得るため、増額を一律に少額とは断定しない。記録CIと評価件数を別々に積算する。
+- ACCEPT／REJECT試験ではEC2 2台と暗号化EBSを短時間だけ使用する。作成前に東京単価・時間を確認し、成功時または試験計画の待機期限・失敗時にCleanupする。
 - NAT Gateway、Load Balancer、public IPv4を追加すると別料金になるため、Phase 7では作成しない。
 - public IPv4は通常0.005 USD/時で、1個を1か月保持すると約3.60 USDになるため本件では作らない。
 
@@ -178,6 +188,13 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 8. 1 USDでは料金発生、3 USDでは1週間の想定上限、5 USDでは内訳調査、8 USDでは新規Apply停止、10 USDでは異常調査と不要resourceの停止・削除を判断する。
 
 ## 7. 公式料金情報
+
+全学習終了時は[試験計画8](05_test_plan.md)に従い、devだけでなくbootstrap・手動作成本件専用resource・全S3 versionを確認する。
+KMS削除予約後の待機と請求反映も追跡し、本件の継続課金停止および完全削除を別々に確認する。
+
+- [S3 Lifecycleと課金](https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lifecycle-mgmt.html)
+- [Flow Logsの集約間隔](https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html)
+- [KMS keyの削除](https://docs.aws.amazon.com/kms/latest/developerguide/deleting-keys.html)
 
 - [AWS Budgets Pricing](https://aws.amazon.com/aws-cost-management/aws-budgets/pricing/)
 - [Amazon S3 Pricing](https://aws.amazon.com/jp/s3/pricing/)

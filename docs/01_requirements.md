@@ -14,7 +14,9 @@ Infrastructure as Codeの学習を目的とする。
 - 単一アカウント
 - 単一環境：dev
 - 原則として低コストまたは無料枠内
-- Terraformで作成したリソースは検証後にdestroy可能とする
+- 学習・最終検証後はTerraformで作成したBaselineをdestroyし、本件由来の継続課金を残さない
+- 全versionを含むS3・backend・手動作成した本件専用resourceも棚卸しし、完全削除と課金停止を確認する。無関係な既存resourceやAWS管理resourceの一括削除は対象外
+- KMS等の削除待機と請求反映遅延を考慮し、destroyコマンド成功だけで完了としない
 - 本番環境ではなく、セキュリティ基盤の検証環境とする
 
 ## 3. 今回の実装対象

@@ -226,6 +226,10 @@ S3 identity policy・MFA条件単体はSimulation確認済み。実APIによる�
 
 ### Phase 7: ネットワーク検証
 
+学習を二つに分ける。通信の学習はRoute・SGと実通信のACCEPT／REJECTを照合すること、
+継続監査はAWS Configで設定履歴と基準適合を確認することである。後者は前者の代替ではない。
+Config追加は既存resourceも記録・評価し得るため、対象範囲・周期・費用を実装前に確定する。
+
 目的:
 
 - 2 Availability Zoneの検証用VPCで、Address Plan、Subnet、Route、Internet Gateway、
@@ -261,7 +265,9 @@ S3 identity policy・MFA条件単体はSimulation確認済み。実APIによる�
   Amazon Linux 2023のPythonで外部download不要の一時HTTP serviceを起動する。
 - 許可Portと非許可Portへ少数回通信し、EC2-BのENI、送信元・宛先private IP、
   destination port、actionおよびlog-statusを組み合わせて`ACCEPT`と`REJECT`を判定する。
-- S3への`.log.gz`到着と内容を確認してから、一時EC2、EBSおよび試験用Security Groupをdestroyする。
+- S3への`.log.gz`到着と内容を確認後、または待機期限・試験失敗時に一時EC2、EBSおよび試験用Security Groupを削除する。期限と失敗時手順は試験計画7.2を参照する。
+- 最大10分集約は設定上限であり、Nitro EC2のENIでは実際は1分以下となる。現行・非現行30日のS3 Lifecycleは完全削除まで30日という意味ではない。
+- Phase 7終了時のBaseline保持は後続検証のための一時保持であり、全学習終了後は試験計画8の完全削除・継続課金停止確認を行う。
 
 判断理由:
 

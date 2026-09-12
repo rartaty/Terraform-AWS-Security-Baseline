@@ -76,6 +76,12 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 
 ## 7. Phase 7の試験仕様
 
+「通信の学習」と「継続的な設定監査」を区別する。前者はRoute・SG・実通信・Flow Logs、
+後者はConfigの構成履歴とRule評価で確認する。2台試験はAZ障害切替やInternet接続の実証ではない。
+Configのperiodic評価は24時間を基本候補とし、Ruleの対応trigger・parameter・対象resource数を
+実装前に確定する。変更時評価とperiodic評価、記録CI数を分けて費用を計算する。
+最大10分集約を設定してもNitroのENIは1分以下となるため、1分のrecordを不合格にしない。
+
 ### 7.1 静的構成確認
 
 | 対象 | 確認内容 | 合格条件 |
@@ -104,18 +110,47 @@ Ingress許可し、外部downloadを行わずAmazon Linux 2023のPythonで一時
 
 A側ENIでは非許可Portへの送信もEgress Ruleにより`ACCEPT`になり得るため、拒否判定は
 B側ENIを基準にする。1 packetだけに依存せず、service起動待ちを含む少数回のretryを行う。
-Flow Logsはreal-time packet captureではないため、S3到着を確認する前にtest resourceを削除しない。
+REJECTだけでSG原因と断定せず、Route、NACL、AのEgress、BのIngressおよび試験時刻を照合する。
+暫定の待機上限は最終試験通信から30分、全体上限はEC2作成apply開始から2時間とする。
+早い方の期限で試験を終了し、成功・失敗を問わずCleanupへ進む。起動失敗・権限不足でも同様とする。
+ログ未着は失敗／未観測として時刻・ENI・試行結果を保存し、成功扱いにしない。
+削除後に遅延配送されたログは記録済みENIと照合できるため、ログ待ちでEC2を無期限保持しない。
+Cleanup失敗時は残存ID、error、課金継続を記録して利用者に報告し、終了扱いにせず対応する。
+上限は作業手順であり自動停止機能ではない。apply前にCleanupの権限・手順と作業時間を確保する。
 
 ### 7.3 Cleanup確認
 
 - test flagを通常値へ戻してapplyし、EC2-A／B、root EBSおよびtest用Security Groupを削除する。
 - EC2、EBS、ENI、Public IPv4およびtest用Security Groupの残存がないことをread-only APIで確認する。
-- Flow Logs、専用S3、VPC、Subnet、Route Tableおよびhardening済みDefault SGはBaselineとして保持する。
+- Flow Logs、専用S3、VPC、Subnet、Route Tableおよびhardening済みDefault SGは後続検証まで一時保持する。学習終了後は次節に従い削除する。
 - Config Ruleが既存Default VPC等を`NON_COMPLIANT`とした場合は別findingとして記録し、Phase 7だけの判断で変更・削除しない。
 - 最終`terraform plan`が`No changes`になることを確認する。
 - Phase 7.5を実施する場合は、このCleanupとPhase 7完了後に別試験計画を作る。
 
+## 8. 学習終了時の完全削除・継続課金停止
+
+2026-09-12の合意により、学習完了後は本件Baselineを完全削除する。ここは終了条件であり、
+削除済みの記録や、今すぐdestroyする指示ではない。実施時に対象・削除plan・必要証跡を確認する。
+
+1. dev、bootstrap、別Lab、手動作成本件専用resourceを棚卸しする。利用Region全体とglobal resourceを確認し、無関係な既存resourceを除外する。
+2. 必要な証跡は機密情報を除いてローカルへ保存する。stateは秘密情報を含み得るためGitへ入れず、安全に扱う。
+3. 依存関係を確認してworkload、ログ生成・配送、課金する検知・Config等のサービスを停止／削除する。Recorderだけの停止ではRule評価や他サービスの課金停止を証明しない。
+4. S3は現行objectだけでなく非現行version、delete marker、未完了multipart uploadを確認し、必要な完全削除後にbucketを削除する。30日Lifecycle待ちで継続費用を残さない。
+5. Terraform backendは依存する全構成の削除とstate確認が終わるまで保持する。backend自身の削除手順・stateの扱いを事前に決め、最後にbootstrapを片付ける。
+6. KMSは復号が必要な証跡処理・利用サービスの終了後に削除予約する。通常Roleから外した削除権限は必要時だけ承認された管理経路で付与し、作業後に撤去する。削除待機中は完全削除未完了として追跡し、待機期間後に不在を確認する。
+7. EC2、EBS、snapshot、ENI、IP、Firewall Endpoint、S3、課金サービス等をread-only APIで照合する。Terraform管理外も確認し、stateが空という理由だけで課金ゼロとしない。
+8. 課金データ反映後に削除後の利用期間を対象として新規課金がないことを確認する。削除前利用分の後日請求と継続課金を区別する。KMS削除予約取消等で料金が再発生していないことも確認する。
+
+完了は「本件由来の継続課金なし」と「削除可能な本件resourceの完全削除」の両方を満たした時点とする。
+AWS管理keyや無料のサービス保持履歴まで消去すること、無関係なresourceの削除やアカウント閉鎖は要求しない。
+削除手順の詳細化と実行はPhase 8の残作業であり、現在は未実施である。
+現行のKMSコードは`prevent_destroy = true`、削除待機30日である。最終削除時は保護解除の
+限定変更と削除権限を事前確認する必要があり、今のまま一括destroyできるとは限らない。
+今回この保護も待機日数も変更しない。
+
 ## Activity Log
+
+- 2026-09-12: 費用・保存期間の誤解を補正。Phase 7の通信学習とConfig監査を分離し、暫定待機期限と失敗時Cleanup、学習完了後の完全削除・継続課金停止確認を追加。AWS設定は変更していない。
 
 - 2026-09-12: Phase 7の2 AZ Network Baseline、Public／Isolated Subnet、Flow Logs専用S3、Config連携、および一時EC2-A／BによるACCEPT／REJECT試験を合意済み設計として追加。Phase 7.5のAWS Network Firewallは常設せず、別ADR・1 AZ・事前費用承認・同日destroyを条件とするOptional Labへ分離した。
 - 2026-09-11: 文書整合性監査でdev planのNo changes、Recorder稼働、Snapshot/History配送成功、7 RuleのCOMPLIANTを再確認。Budget Actionの説明とSimulationの証明範囲を修正し、未実施の実API試験を残作業へ戻した。
