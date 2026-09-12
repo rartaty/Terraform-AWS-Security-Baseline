@@ -5,7 +5,7 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 
 ## Status
 
-設計・構築中（2026-09-11同期：Phase 0〜5 完了、Phase 6 は実装・主要動作確認済み。実API試験範囲の判断と費用観測が残る）
+設計・構築中（2026-09-12同期：Phase 0〜5 完了、Phase 6は実装・主要動作確認済みで実API試験範囲の判断と費用観測が残る。Phase 7は設計合意済み・未実装）
 
 ## Roadmap
 
@@ -18,7 +18,8 @@ Terraformを使用して、AWSアカウントの基本的なセキュリティ�
 | 4 | 監査ログ（CloudTrail） | 完了。CloudTrail用S3のHTTPS必須化、配送継続、No changesを確認済み。CloudWatch Logs転送はADR 0005で見送り |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 完了 |
 | 6 | 構成・コンプライアンス管理（AWS Config） | Recorder・配送成功、7 RuleすべてCOMPLIANT、dev planはNo changes。S3権限・MFA条件はSimulation確認済み。実API試験の未実施範囲と費用観測は試験計画参照 |
-| 7 | ネットワーク検証（VPC・Flow Logs） | 未着手 |
+| 7 | ネットワーク検証（VPC・Flow Logs） | [ADR 0010](docs/decisions/0010-build-two-az-network-baseline-and-test-flow-logs.md)で設計合意済み。2 AZのPublic／Isolated Subnet、明示Route、Default SG hardening、専用S3、Config連携、一時EC2-A／BによるACCEPT／REJECT試験を実装予定 |
+| 7.5 | Optional IDS/IPS Lab（AWS Network Firewall） | Phase 7完了後に別途判断。常設せず、1 AZで短期検証して同日destroyする |
 | 8 | 統合試験・証跡・後片付け・文書化 | 未着手 |
 
 Phaseごとの目的、完了条件、依存関係は `docs/02_architecture.md`、
@@ -43,6 +44,7 @@ Phaseごとの目的、完了条件、依存関係は `docs/02_architecture.md`�
 - IAM Access Analyzer
 - Amazon VPC（Phase 7予定）
 - VPC Flow Logs（Phase 7予定）
+- AWS Network Firewall（Phase 7.5 Optional Lab。Baselineには常設しない）
 
 ## Directory structure
 

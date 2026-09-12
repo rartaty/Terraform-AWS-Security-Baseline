@@ -1,7 +1,7 @@
 # 試験計画・確認状況と残作業
 
-- 同期日: 2026-09-11
-- 対象: dev環境、Phase 3〜6を中心とした現行構成
+- 同期日: 2026-09-12
+- 対象: dev環境、Phase 3〜6の現行構成とPhase 7の合意済み試験設計
 - 根拠: Terraformコード、ADR、利用者が共有した実行結果、非公開作業記録
 - 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は過去の共有結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
 
@@ -18,7 +18,9 @@
 
 | 項目 | 現状 | 完了に必要な作業 |
 |---|---|---|
-| Phase 7のVPC・Flow Logs | 未着手 | 別Phaseとして設計・構築・検証する |
+| Phase 7のNetwork Baseline | 設計合意済み・未実装 | 2 AZのPublic／Isolated Subnet、明示Route、Default SG hardening、VPC Flow Logs、専用S3およびConfig連携を構築・検証する |
+| Phase 7のACCEPT／REJECT試験 | 設計合意済み・未実施 | Public IPv4なしの一時EC2-A／Bを作成し、許可Portと非許可PortのFlow LogをEC2-B側ENIで確認後、全一時resourceを削除する |
+| Phase 7.5のAWS Network Firewall | Optional・未設計 | Phase 7完了後、別ADR、1 AZ、事前費用承認、`ALERT`→`DROP`、同日destroyを条件に実施判断する |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
 
@@ -72,8 +74,50 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 - Phase 6は主要動作確認済みだが、ADR 0008の完了条件をすべて満たしたとは扱わない。
 - Phase 8の統合試験・復旧・後片付けは別途計画する。この文書は全Phaseの試験仕様が完成したことを意味しない。
 
+## 7. Phase 7の試験仕様
+
+### 7.1 静的構成確認
+
+| 対象 | 確認内容 | 合格条件 |
+|---|---|---|
+| Address Plan | VPCと4 SubnetのCIDR、AZ、重複 | CIDRが重複せず、Public／Isolatedが各2 AZに存在する |
+| Route Table | Main、Public、IsolatedのRouteとassociation | Main／Isolatedは`local`のみ、Publicだけが`0.0.0.0/0 -> IGW`を持ち、全Subnetが明示関連付けされる |
+| Public exposure | Public IPv4自動割当、IPv6、NAT、Load Balancer | いずれも作成・有効化されていない |
+| Default SG | Ingress／Egress | 両方とも空である |
+| Flow Logs | Scope、Traffic Type、aggregation、destination | VPC全体、`ALL`、最大10分、専用S3で`ACTIVE`である |
+| S3 | 公開防止、暗号化、Versioning、Transport、Lifecycle | Public Access Block、SSE-S3、Versioning、HTTPS必須、現行・非現行versionの30日Lifecycleを満たす |
+| AWS Config | 記録対象とManaged Rules | Network resource typeが記録され、追加3 Ruleをresource別に確認し、Phase 7 VPCと既存resourceの結果を区別できる |
+
+### 7.2 動的通信試験
+
+EC2-AをPublic Subnet、EC2-Bを同じAZのIsolated Subnetへ配置する。両方ともPublic IPv4、
+SSH keyおよびIAM Instance Profileを持たない。AのIngressは空、AのEgressはBのSecurity Groupを
+destinationとして試験Portだけを許可する。BはAのSecurity Groupをsourceとして許可Portだけを
+Ingress許可し、外部downloadを行わずAmazon Linux 2023のPythonで一時HTTP serviceを起動する。
+
+| Test | 観測点 | 合格条件 |
+|---|---|---|
+| AからBの許可Portへ接続 | Application応答、B側ENIのFlow Log | HTTP応答を確認し、`srcaddr=A`、`dstaddr=B`、許可`dstport`、`action=ACCEPT`、`log-status=OK`を確認する |
+| AからBの非許可Portへ接続 | 接続結果、B側ENIのFlow Log | 接続失敗を確認し、同じA／Bで非許可`dstport`、`action=REJECT`、`log-status=OK`を確認する |
+| Source SG限定 | BのIngress Rule | SourceがCIDRやAの現在IPではなく、Aにだけ付与したSecurity Group IDである |
+| S3配送 | Flow Logs専用S3 | `.log.gz` objectが到着し、対象ENIのrecordを展開して確認できる |
+
+A側ENIでは非許可Portへの送信もEgress Ruleにより`ACCEPT`になり得るため、拒否判定は
+B側ENIを基準にする。1 packetだけに依存せず、service起動待ちを含む少数回のretryを行う。
+Flow Logsはreal-time packet captureではないため、S3到着を確認する前にtest resourceを削除しない。
+
+### 7.3 Cleanup確認
+
+- test flagを通常値へ戻してapplyし、EC2-A／B、root EBSおよびtest用Security Groupを削除する。
+- EC2、EBS、ENI、Public IPv4およびtest用Security Groupの残存がないことをread-only APIで確認する。
+- Flow Logs、専用S3、VPC、Subnet、Route Tableおよびhardening済みDefault SGはBaselineとして保持する。
+- Config Ruleが既存Default VPC等を`NON_COMPLIANT`とした場合は別findingとして記録し、Phase 7だけの判断で変更・削除しない。
+- 最終`terraform plan`が`No changes`になることを確認する。
+- Phase 7.5を実施する場合は、このCleanupとPhase 7完了後に別試験計画を作る。
+
 ## Activity Log
 
+- 2026-09-12: Phase 7の2 AZ Network Baseline、Public／Isolated Subnet、Flow Logs専用S3、Config連携、および一時EC2-A／BによるACCEPT／REJECT試験を合意済み設計として追加。Phase 7.5のAWS Network Firewallは常設せず、別ADR・1 AZ・事前費用承認・同日destroyを条件とするOptional Labへ分離した。
 - 2026-09-11: 文書整合性監査でdev planのNo changes、Recorder稼働、Snapshot/History配送成功、7 RuleのCOMPLIANTを再確認。Budget Actionの説明とSimulationの証明範囲を修正し、未実施の実API試験を残作業へ戻した。
 - 2026-09-11: KMS破壊的権限の縮小について、AWS適用、Key Policy確認、一時権限撤去、最終No changesを反映した。
 - 2026-09-11: CloudTrail用S3のHTTPS必須化を適用し、Terraform整合とログ配送継続の確認結果を反映した。
