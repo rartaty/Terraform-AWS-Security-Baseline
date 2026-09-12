@@ -21,11 +21,11 @@
 ## 2. 見積りの前提
 
 - 個人所有の単一AWSアカウント、単一dev環境、東京リージョンだけを対象とする。
-- 本番ワークロード、EC2常時稼働、NAT Gateway、Load Balancer、専用public IPv4は使わない。
+- 本番ワークロード、EC2常時稼働、NAT Gateway、Load Balancer、専用public IPv4は使わない。Phase 7のEC2はFlow Logs試験中だけ2台を一時作成し、同日中に削除する。
 - CloudTrailは管理イベントの最初のコピーだけをS3へ配信する。
 - CloudTrailのデータイベント、Insights、CloudTrail Lakeは使わない。
-- 初期概算ではCloudWatch LogsとVPC Flow Logsを各1 GB/月未満と仮定した。現在CloudWatch Logs転送は見送り、VPC Flow Logsは未実装であり、採用時に再見積りする。
-- KMS customer managed keyは1個とし、後続サービスで共有する。
+- 初期概算ではCloudWatch LogsとVPC Flow Logsを各1 GB/月未満と仮定した。現在CloudWatch Logs転送は見送り、VPC Flow Logsは設計合意済み・未実装であり、apply前に再見積りする。
+- KMS customer managed keyは1個とし、CloudTrailとAWS Configで共有する。Phase 7のFlow Logs専用S3はSSE-S3とし、KMS利用主体を追加しない。
 - Security HubはEssentials相当の必要機能だけとし、Extended Planは使わない。
 - GuardDuty Protection Planは必要なものだけを選び、不要なplanは無効化する。
 - IAM Access Analyzerは無料のexternal access analyzerだけを使う。
@@ -37,7 +37,7 @@
 ## 3. Phase別の月額見積り
 
 以下の表と累計は2026-08-25の全Phase初期概算であり、現行構成の実測値ではない。
-CloudWatch Logs転送はADR 0005で見送り、VPC Flow LogsはPhase 7未着手。
+CloudWatch Logs転送はADR 0005で見送り、VPC Flow LogsはPhase 7で設計合意済み・未実装である。
 Phase 6の採用構成に対する見積りはADR 0008の月額0.10～1.00 USD程度を参照する。
 表の0.10～5.00 USDは初期の広い概算として残す。いずれも上限保証ではなく、
 Configuration Item数・Rule評価数・実料金は未確認であり、確認後に表と累計を再見積りする。
@@ -54,7 +54,8 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 | 4 | CloudTrail、ログS3、CloudWatch Logs | 0.10～1.50 USD | 約1.10～2.61 USD | 最初の管理イベントtrailは無料、保存・転送・ログ量は従量課金 |
 | 5 | GuardDuty、Security Hub、Access Analyzer | 0.10～3.00 USD | 約1.20～5.61 USD | 小規模・低イベントを想定。trial終了後を基準にする |
 | 6 | AWS Config、Config rule、保存S3 | 0.10～5.00 USD | 約1.30～10.61 USD | resource記録数とrule評価数が最大の変動要因 |
-| 7 | VPC Flow Logs、ログ保存 | 0～0.50 USD | 約1.30～11.11 USD | VPC論理部品は原則無料。EC2・NAT・public IPv4は作らない |
+| 7 | VPC Flow Logs、ログ保存、Config記録・Rule評価、一時EC2／EBS | 0～0.50 USD | 約1.30～11.11 USD | VPC論理部品は原則無料。EC2は2台を短時間だけ使用し、NAT・public IPv4は作らない |
+| 7.5 | AWS Network Firewall Endpoint、処理data、Firewall Log、一時test resource | apply前に別途見積り | 定常費用の追加なし | Optional Lab。1 AZで短期検証し、同日中にdestroyする。Phase 7の累計には含めない |
 | 8 | 一時的な試験操作・証跡 | 0～1.00 USD（一時的） | 定常費用の追加なし | 試験後に一時resourceを削除する |
 
 表の単純合計は約1.30～11.11 USD/月だが、料金変更、計測単位、
@@ -130,8 +131,19 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 
 - VPC、subnet、route table、Security Groupなどの論理部品には通常、個別の時間料金はない。
 - VPC Flow Logsは出力先のログ取り込み・保存料金が発生する。
-- NAT Gateway、EC2、Load Balancer、public IPv4を追加すると別料金になる。
+- Phase 7ではVPC全体の`ALL` trafficを最大10分で集約し、専用S3へ標準Text・Gzip形式で保存する。少量を前提とするが、上限料金ではない。
+- 専用S3はSSE-S3、Versioning、現行・非現行versionとも30日Lifecycleとする。Flow Log objectは通常上書きしないが、Versioningを他のlog bucketと共通の保護層として採用する。
+- Phase 6のConfiguration Recorderへ7 resource type、Config Rulesへ3 Ruleを追加するため、Configuration ItemとRule評価の料金もわずかに増加する。
+- ACCEPT／REJECT試験では小さいEC2を2台と暗号化EBSを短時間だけ使用する。作成前にAMI、instance type、台数、予定時間および東京Regionの単価を確認し、S3到着後に削除する。
+- NAT Gateway、Load Balancer、public IPv4を追加すると別料金になるため、Phase 7では作成しない。
 - public IPv4は通常0.005 USD/時で、1個を1か月保持すると約3.60 USDになるため本件では作らない。
+
+### AWS Network Firewall（Phase 7.5 Optional Lab）
+
+- Availability ZoneごとのFirewall Endpoint時間料金、処理data量、Firewall Logの配送・保存、test resourceが課金対象になる。
+- Phase 7の2 AZ Baselineへ常設せず、1 AZの単純なinspection pathとして短時間だけ構築する。2 AZへ配置するとEndpoint時間料金も2系統分になる。
+- `ALERT`確認後に`DROP`を試し、試験当日にdestroyする。作成前に東京Regionの現行単価と予定稼働時間から上限見積りを作り、利用者の明示承認を得る。
+- Firewall Endpoint、専用Route、Log出力先およびtest resourceの削除をCLIで確認するまで、Labを終了扱いにしない。
 
 ## 5. 課金開始前の停止点
 
@@ -142,7 +154,8 @@ Phase作業そのものに固定料金があるわけではなく、作成後に
 - Phase 4: CloudTrailの`apply`。見送り中のCloudWatch Logs転送を後から追加する場合も事前承認・再見積りする。
 - Phase 5: GuardDutyまたはSecurity Hubの有効化
 - Phase 6: AWS Config recorderとConfig ruleの有効化
-- Phase 7: Flow Logs、EC2、NAT Gateway、public IPv4等の作成
+- Phase 7: Flow Logs専用S3、Flow Logsおよび一時EC2／EBSの作成
+- Phase 7.5: AWS Network Firewall、Firewall Endpoint、Firewall Logおよびtest resourceの作成
 
 特に次の場合は作業を停止して再設計する。
 

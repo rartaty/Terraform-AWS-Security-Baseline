@@ -36,6 +36,7 @@ Phase 5  セキュリティ検知
 Phase 6  構成・コンプライアンス管理
    ↓
 Phase 7  ネットワーク検証
+   ├─ Phase 7.5  Optional IDS/IPS Lab（短期構築・試験後destroy）
    ↓
 Phase 8  統合試験・証跡・後片付け・文書化
 ```
@@ -227,23 +228,98 @@ S3 identity policy・MFA条件単体はSimulation確認済み。実APIによる�
 
 目的:
 
-- 最小構成のVPCで、ネットワーク分離と通信記録を検証する。
+- 2 Availability Zoneの検証用VPCで、Address Plan、Subnet、Route、Internet Gateway、
+  Security GroupおよびVPC Flow Logsの役割を構造的に理解する。
+- Public SubnetとIsolated Subnetの経路差、Security Groupによる許可・拒否、および
+  その結果がFlow Logsへどう記録されるかをTerraformとAWS上の証跡で検証する。
 
-予定内容:
+採用構成:
 
-- VPC、public/private subnet、route table、最小権限のSecurity Groupを作成する。
-- VPC Flow Logsを有効化し、ログ出力を確認する。
-- EC2、NAT Gateway、専用public IPv4は原則作成しない。
+- CIDRを明示したVPCを作成し、2 AZへPublic Subnetを2つ、Isolated Subnetを2つ配置する。
+- Public Route Tableは`local`と`0.0.0.0/0 -> Internet Gateway`を持たせ、
+  Isolated Route TableとMain Route Tableは原則`local`だけとする。
+- すべてのSubnetを対応するCustom Route Tableへ明示的に関連付ける。
+- Public IPv4自動割当とIPv6を無効にし、NAT Gateway、Load Balancerおよび常設EC2を作成しない。
+- Default Security GroupのIngress／Egressを空にする。
+- VPC全体を対象に、`ALL`、最大10分集約のVPC Flow Logsを有効化する。
+- Flow Logsを専用S3 bucketへ標準Text・Gzip形式で保存する。bucketは非公開、
+  SSE-S3、Versioning、HTTPS必須、現行・非現行versionとも30日Lifecycleとする。
+- Phase 6のConfiguration RecorderへVPC、Subnet、Route Table、Security Group、
+  Internet Gateway、Network ACLおよびFlow Logのresource typeを追加する。
+- `VPC_FLOW_LOGS_ENABLED`、`VPC_DEFAULT_SECURITY_GROUP_CLOSED`、
+  `INCOMING_SSH_DISABLED`のAWS Config Managed Rulesを追加する。
+- Network用Managed Ruleは既存Default VPCなどPhase 7外のresourceも評価する場合がある。
+  unrelated resourceの`NON_COMPLIANT`をPhase 7の構築失敗と混同せず、resource別結果を分類する。
+  Phase 7だけの判断で既存resourceを変更または削除しない。
+
+一時試験構成:
+
+- Public SubnetのEC2-Aを送信側、同じAZのIsolated SubnetのEC2-Bを受信側として短時間だけ作成する。
+- 両EC2はPublic IPv4、SSH key、IAM Instance Profileを持たず、IMDSv2と暗号化EBSを使用する。
+- EC2-AのIngressは空とし、EgressはEC2-BのSecurity Groupに対する試験Portだけを許可する。
+- EC2-BはEC2-AのSecurity GroupをSourceとして許可PortだけをIngress許可し、
+  Amazon Linux 2023のPythonで外部download不要の一時HTTP serviceを起動する。
+- 許可Portと非許可Portへ少数回通信し、EC2-BのENI、送信元・宛先private IP、
+  destination port、actionおよびlog-statusを組み合わせて`ACCEPT`と`REJECT`を判定する。
+- S3への`.log.gz`到着と内容を確認してから、一時EC2、EBSおよび試験用Security Groupをdestroyする。
 
 判断理由:
 
-- VPCの論理部品自体は多くが無料だが、NAT Gateway、EC2、public IPv4、ログ量は継続課金になる。
-- 本件の目的はアプリケーション稼働ではなく、分離・通信制御・監査の学習である。
+- VPC、Subnet、Route Table、Internet GatewayおよびSecurity Groupは、通信経路と境界を
+  学習するために必要であり、これらの論理部品自体には通常個別の時間料金がない。
+- 2 AZと4 SubnetによりMulti-AZの基本構造を学ぶが、高可用性workloadは構築しない。
+- Internet GatewayへのRouteがあることをPublic Subnetの定義とし、Public IPv4自動割当とは分けて扱う。
+- VPC外へのRouteを持たないため、旧記載のprivate subnetよりIsolated Subnetが正確である。
+- Flow Logsはactive trafficが発生するまで実recordを出力しない。2台の一時EC2により、
+  「配送された」だけでなくSecurity Groupの許可・拒否がどう記録されるかまで検証する。
+- Security Groupはstatefulであるため、送信側EC2-AのIngressは不要である。
+  EC2-BのSourceにはIPではなくEC2-AのSecurity Groupを指定し、private IP変更に依存しない許可を学ぶ。
+- NAT Gateway、常設EC2、Public IPv4を避け、Flow Logs、S3、AWS Configと短時間の
+  EC2／EBSだけを課金要素として管理する。
 
 完了条件:
 
-- subnetとrouteの分離、Security Groupの許可内容を説明できる。
-- Flow Logsの出力を確認し、検証用リソースの残置有無を決定する。
+- VPCと4 SubnetのCIDR、Availability Zoneおよび用途を説明できる。
+- Public、Isolated、Mainの各Route Tableと明示的なSubnet associationを説明できる。
+- Public SubnetだけがInternet GatewayへのRouteを持ち、Public IPv4自動割当が無効である。
+- Default Security GroupのIngress／Egressが空である。
+- EC2-AからEC2-Bの許可Portへの通信成功と、非許可Portへの通信拒否を確認できる。
+- EC2-B側ENIのFlow Logで、許可Portの`ACCEPT`と非許可Portの`REJECT`を識別できる。
+- Flow Logの`.log.gz` objectが専用S3へ到着し、必要なfieldと`log-status=OK`を確認できる。
+- Flow Logs用S3の公開防止、SSE-S3、Versioning、HTTPS必須および30日Lifecycleを確認できる。
+- 追加したAWS Config Ruleが評価され、結果を説明できる。
+- Phase 7 VPCの評価結果と既存resource由来の評価結果をresource IDで区別できる。
+- 一時試験resourceを削除し、Terraformの最終planが`No changes`になる。
+
+### Phase 7.5: Optional IDS/IPS Lab
+
+目的:
+
+- AWS Network FirewallによるStateless／Stateful Inspection、`ALERT`、`DROP`および
+  Firewall Logを短期環境で学習する。
+
+方針:
+
+- AWS Network FirewallはSecurity Baselineの常設componentに含めない。
+- Phase 7のVPC、Subnet、Route、Security Group、Flow Logsの理解と検証を先に完了させる。
+- 別ADRと分離したTerraform構成で、1 AZの単純なinspection pathとして設計する。
+- 作成直前に東京RegionのFirewall Endpoint時間料金、data processing料金、
+  log保存料金およびtest resource料金を再見積りし、利用者の明示承認後にapplyする。
+- 最初に`ALERT`でmatchとlogを確認し、意図したtrafficだけが対象になることを確認してから`DROP`を試す。
+- 試験当日にNetwork Firewall、Firewall Endpoint、test resourceおよび専用Routeをdestroyし、
+  AWS CLIでも課金resourceが残っていないことを確認する。
+
+判断理由:
+
+- AWS Network FirewallはIDS／IPSおよびStateful Inspectionの学習に有用である。
+- 一方、Availability ZoneごとのFirewall Endpoint時間料金とdata processing料金が発生し、
+  Firewall専用Subnetと対称Routingも必要になる。Baselineへ常設すると費用と構成の複雑性が大きくなる。
+
+完了条件:
+
+- StatelessとStateful ruleの違い、`ALERT`と`DROP`の違いを説明できる。
+- test trafficについてFirewall LogとVPC Flow Logを関連付けられる。
+- destroy後にFirewall Endpointおよび関連する課金resourceが残っていない。
 
 ### Phase 8: 統合試験・証跡・後片付け・文書化
 

@@ -58,9 +58,18 @@ Infrastructure as Codeの学習を目的とする。
 
 ### ネットワーク
 - 検証用VPC
-- パブリック／プライベートサブネット
+- 2 Availability Zoneに配置するパブリック／隔離（Isolated）サブネット
+- VPCおよびSubnetのCIDRを明示したAddress Plan
+- 各Subnetに明示的に関連付けるRoute Table
+- Public Subnetだけが利用するInternet GatewayへのRoute
+- Public IPv4自動割当、IPv6、NAT Gatewayを使用しない構成
 - 必要最小限のSecurity Group
+- Default Security GroupのIngress／Egressを空にする
 - 不要なインバウンド通信を許可しない
+- VPC全体を対象とするVPC Flow Logs（ACCEPT／REJECT）
+- Flow Logs専用S3バケットへの暗号化保存、HTTPS必須、公開防止、30日Lifecycle
+- 一時的な2台のEC2によるSecurity GroupのACCEPT／REJECT試験
+- 試験後に一時EC2、EBSおよび試験用Security Groupを削除する
 
 ## 4. 今回は実装しないもの
 
@@ -75,6 +84,7 @@ Infrastructure as Codeの学習を目的とする。
 - 高可用性を目的としたNAT Gateway構成
 - 本番ワークロード
 - 完全自動修復
+- AWS Network Firewallの常設。IDS／IPSはPhase 7.5の短期Optional Labとして別途判断する
 
 ## 5. 非機能要件
 
@@ -106,6 +116,9 @@ Infrastructure as Codeの学習を目的とする。
 - AWSコンソール上で各サービスの有効化を確認できる
 - CloudTrailログがS3へ保存される
 - Security HubまたはConfigで検出結果を確認できる
+- VPC Flow Logsで、許可PortのACCEPTと非許可PortのREJECTを識別できる
+- Flow Logの`.log.gz` objectが専用S3バケットへ保存される
+- Phase 7の一時試験resourceを削除し、定常構成に残っていないことを確認できる
 - AWS Budgetsの設定を確認できる
 - terraform destroy後に残存リソースを確認できる
 - READMEと設計ドキュメントが完成している

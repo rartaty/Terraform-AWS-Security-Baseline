@@ -448,14 +448,15 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 関連資産 | A-05 |
 | 関連境界 | TB-04 |
 | 関連Data Flow | DF-05、DF-06 |
-| シナリオ | Security Group、route table、subnetまたはInternet Gatewayの設定不備により、想定していない送信元・宛先・portへの通信を許可する |
+| シナリオ | Security Group、route table、subnetまたはInternet Gatewayの設定不備により、想定していない送信元・宛先・portへの通信を許可する。またはFlow Logsの配送不備により、その通信を後から識別できない |
 | 影響 | 将来配置するresourceへの不正access、情報漏えい、侵害後の横展開につながる可能性がある |
-| 既存control | 検証用VPCとnetwork resourceは未構築。EC2、NAT Gateway、専用public IPv4を原則作成しない方針 |
-| 追加予定control | 必要最小限のSecurity Group、public/private subnetとrouteの分離、不要なinbound ruleの禁止、VPC Flow Logs、PlanとAWS Consoleによる設定確認 |
+| 既存control | 検証用VPCとnetwork resourceは未構築。Phase 7設計ではNAT Gateway、専用public IPv4および常設EC2を作成しない方針 |
+| 追加予定control | 2 AZのPublic／Isolated Subnetと明示的なRoute association、Internet Gateway RouteのPublic限定、Public IPv4自動割当OFF、Default Security GroupのIngress／Egress削除、Source Security Group参照による最小許可、VPC全体のFlow Logs（ALL）、専用S3の公開防止・暗号化・HTTPS必須・30日Lifecycle、AWS Configによる継続評価 |
 | 固有risk | 発生可能性2 × 影響度3 = 6（高） |
 | 現在の残存risk | 対象resource未構築のため評価対象外 |
 | 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
-| 残存risk | Network設定が正しくても、将来配置するapplication自体の脆弱性や認証不備は別のriskとして残る |
+| 検証方法 | 一時EC2-AからEC2-Bの許可Portと非許可Portへ通信し、EC2-B側ENIのFlow LogでSource／Destination／Port／Action／Log Statusを照合する。S3 object到着後に一時resourceをdestroyする |
+| 残存risk | Network設定が正しくても、将来配置するapplication自体の脆弱性や認証不備は別のriskとして残る。Security GroupはAllow ruleだけであり、既存connectionはrule変更後もconnection trackingの有効期間中継続する場合がある。Flow Logsも全packetを記録するPacket Captureではなく、配送はbest effortである |
 
 ## 9. Security control対応表
 
