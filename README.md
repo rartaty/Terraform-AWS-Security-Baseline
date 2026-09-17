@@ -9,7 +9,7 @@ S3の全version、backend、課金サービス、KMSの削除待機を含む残�
 
 ## Status
 
-設計・構築中（2026-09-17同期：Phase 0〜5 完了、Phase 6は実装・主要動作確認済みで実API試験範囲の判断と費用観測が残る。Phase 7は学習用VPC作成とDefault Security Group hardeningを実装・実体確認済みで、Subnet以降を構築中）
+設計・構築中（2026-09-17同期：Phase 0〜5 完了、Phase 6は実装・主要動作確認済みで実API試験範囲の判断と費用観測が残る。Phase 7は学習用VPC、Default Security Group hardening、4 Subnetを実装・実体確認済みで、Route以降を構築中）
 
 ## Roadmap
 
@@ -22,7 +22,7 @@ S3の全version、backend、課金サービス、KMSの削除待機を含む残�
 | 4 | 監査ログ（CloudTrail） | 完了。CloudTrail用S3のHTTPS必須化、配送継続、No changesを確認済み。CloudWatch Logs転送はADR 0005で見送り |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 完了 |
 | 6 | 構成・コンプライアンス管理（AWS Config） | Recorder・配送成功、7 RuleすべてCOMPLIANT、dev planはNo changes。S3権限・MFA条件はSimulation確認済み。実API試験の未実施範囲と費用観測は試験計画参照 |
-| 7 | ネットワーク検証（VPC・Flow Logs） | 学習用VPC作成とDefault SG hardeningは実装・AWS APIで確認済み。2 AZのPublic／Isolated Subnet、明示Route、専用S3、Config連携、一時EC2-A／BによるACCEPT／REJECT試験を構築予定。詳細は[ADR 0010](docs/decisions/0010-build-two-az-network-baseline-and-test-flow-logs.md) |
+| 7 | ネットワーク検証（VPC・Flow Logs） | 学習用VPC、Default SG hardening、2 AZのPublic／Isolated Subnetは実装・AWS APIで確認済み。明示Route、専用S3、Config連携、一時EC2-A／BによるACCEPT／REJECT試験を構築予定。詳細は[ADR 0010](docs/decisions/0010-build-two-az-network-baseline-and-test-flow-logs.md) |
 | 7.5 | Optional IDS/IPS Lab（AWS Network Firewall） | Phase 7完了後に別途判断。常設せず、1 AZで短期検証して同日destroyする |
 | 8 | 統合試験・証跡・後片付け・文書化 | 未着手 |
 
@@ -46,7 +46,7 @@ Phaseごとの目的、完了条件、依存関係は `docs/02_architecture.md`�
 - Amazon GuardDuty
 - AWS Security Hub Essentials / CSPM
 - IAM Access Analyzer
-- Amazon VPC（Phase 7: 学習用VPC・Default SG hardening実装済み）
+- Amazon VPC（Phase 7: 学習用VPC・Default SG hardening・4 Subnet実装済み）
 - VPC Flow Logs（Phase 7予定）
 - AWS Network Firewall（Phase 7.5 Optional Lab。Baselineには常設しない）
 
