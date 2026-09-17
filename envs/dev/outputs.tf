@@ -7,3 +7,13 @@ output "aws_region" {
   description = "AWS region used by the provider"
   value       = data.aws_region.current.region
 }
+
+output "phase7_learning_vpc_id" {
+  description = "Learning VPC ID used to scope later Phase 7 IAM permissions"
+  value       = aws_vpc.phase7_learning.id
+}
+
+output "phase7_learning_default_security_group_id" {
+  description = "Default security group ID; hardened in the scoped follow-up step"
+  value       = aws_vpc.phase7_learning.default_security_group_id
+}
