@@ -28,8 +28,10 @@ data "aws_security_group" "phase7_learning_default" {
 }
 
 // This is an adoption resource: AWS created this group together with the VPC.
-// With no ingress or egress blocks, Terraform removes every default rule and
-// keeps the group closed. It is not used by the Phase 7 workloads.
+// Explicit empty rule collections make the group remain closed. It is not used
+// by the Phase 7 workloads.
 resource "aws_default_security_group" "phase7_learning_closed" {
-  vpc_id = aws_vpc.phase7_learning.id
+  vpc_id  = aws_vpc.phase7_learning.id
+  ingress = []
+  egress  = []
 }
