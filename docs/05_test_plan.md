@@ -150,6 +150,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
+- 2026-09-17: Phase 7の設計に、resourceごとの作成理由、課金、dependency、destroy前提、削除後確認を追加。Terraformのdependency graphだけではS3全versionや遅延ENIを自動解決できないことを明記。AWS resourceの作成・削除は未実施。
+
 - 2026-09-17: 利用者共有のVPC CIDR・利用可能AZと合意を根拠に、ADR 0010のAddress Planと1a／1c配置を確定。照合範囲は提示された東京Regionの結果に限定。AWS resource作成・通信試験は未実施。
 
 - 2026-09-12: 構成設計のPhase 8に残っていた保持・残存費用の旧表現を同期。一時保持は削除順序上の都合に限定し、完全削除と継続課金停止を完了条件に統一した。文書のみの変更。
