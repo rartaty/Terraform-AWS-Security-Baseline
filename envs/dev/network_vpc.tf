@@ -11,3 +11,18 @@ resource "aws_vpc" "phase7_learning" {
     Purpose = "phase7-network-learning"
   }
 }
+
+// AWS creates one default security group with every VPC.  Query it explicitly
+// instead of relying on a computed aws_vpc attribute, which can be empty in
+// provider state even when the group exists in AWS.
+data "aws_security_group" "phase7_learning_default" {
+  filter {
+    name   = "vpc-id"
+    values = [aws_vpc.phase7_learning.id]
+  }
+
+  filter {
+    name   = "group-name"
+    values = ["default"]
+  }
+}

@@ -15,5 +15,5 @@ output "phase7_learning_vpc_id" {
 
 output "phase7_learning_default_security_group_id" {
   description = "Default security group ID; hardened in the scoped follow-up step"
-  value       = aws_vpc.phase7_learning.default_security_group_id
+  value       = data.aws_security_group.phase7_learning_default.id
 }
