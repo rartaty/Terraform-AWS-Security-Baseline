@@ -17,3 +17,8 @@ output "phase7_learning_default_security_group_id" {
   description = "Default security group ID; hardened in the scoped follow-up step"
   value       = data.aws_security_group.phase7_learning_default.id
 }
+
+output "phase7_subnet_ids" {
+  description = "Subnet IDs keyed by their Phase 7 network role"
+  value       = { for key, subnet in aws_subnet.phase7 : key => subnet.id }
+}
