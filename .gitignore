@@ -28,6 +28,8 @@ backend.hcl.json
 
 # Local article source notes
 docs/07_phase*_work_log.md
+docs/phase7_article_draft.md
+docs/local-github-and-backend-setup.md
 
 # IDE / Editor
 .vscode/
