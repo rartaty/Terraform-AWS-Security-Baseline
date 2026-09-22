@@ -1,0 +1,4 @@
+# Copy this file to backend.hcl and replace the placeholder with the existing
+# S3 bucket that already stores this environment's Terraform state.
+# backend.hcl is intentionally ignored by Git.
+bucket = "replace-with-existing-state-bucket-name"
