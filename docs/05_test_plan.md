@@ -1,7 +1,7 @@
 # 試験計画・確認状況と残作業
 
-- 同期日: 2026-09-12
-- 対象: dev環境、Phase 3〜6の現行構成とPhase 7の合意済み試験設計
+- 同期日: 2026-09-23（Phase 7の実績とdev planを更新。Phase 3〜6の個別試験日は各行を参照）
+- 対象: dev環境、Phase 3〜7の構成・試験状況
 - 根拠: Terraformコード、ADR、利用者が共有した実行結果、非公開作業記録
 - 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は過去の共有結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
 
@@ -14,12 +14,12 @@
 - 記録不足: 結果は共有済みだが、文書への集約が不足している。
 - 未検証・未観測: 確認結果がない。記録追記だけで完了扱いにしない。
 
-## 2. 追加実装が必要な事項
+## 2. Phase 7以降の実装・試験状況
 
 | 項目 | 現状 | 完了に必要な作業 |
 |---|---|---|
-| Phase 7のNetwork Baseline | 設計合意済み・未実装 | 2 AZのPublic／Isolated Subnet、明示Route、Default SG hardening、VPC Flow Logs、専用S3およびConfig連携を構築・検証する |
-| Phase 7のACCEPT／REJECT試験 | 設計合意済み・未実施 | Public IPv4なしの一時EC2-A／Bを作成し、許可Portと非許可PortのFlow LogをEC2-B側ENIで確認後、全一時resourceを削除する |
+| Phase 7のNetwork Baseline | 実装・主要検証済み | 静的要件と保存証跡の対応付けを完了する。第7.4節参照 |
+| Phase 7のACCEPT／REJECT試験 | HTTP応答・受信側ENIのACCEPT／REJECT照合、一時resource撤去済み | 試験の再作成は不要。手動IAMの整理結果・確認範囲を記録する |
 | Phase 7.5のAWS Network Firewall | Optional・未設計 | Phase 7完了後、別ADR、1 AZ、事前費用承認、`ALERT`→`DROP`、同日destroyを条件に実施判断する |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
@@ -34,7 +34,7 @@
 
 | 項目 | 現在確認できること | 残作業 |
 |---|---|---|
-| Configuration Item数・Rule評価数・実料金 | 少数resourceの概算のみ | 計測期間・集計範囲を決めて観測し、ADR 0008と費用設計の見積りを更新する |
+| Configuration Item数・Rule評価数・実料金 | 9月21〜22日（UTC）のアカウント全体の暫定費用を取得済み。P7単独の費用ではない | 確定費用とCI数・評価数の対応を確認し、費用設計の見積りを更新する |
 | MFA未認証での実AssumeRole拒否 | 実Trust PolicyのMFA条件を確認し、手作業で同条件を記述したテストPolicyはfalse=implicitDeny、true=allowed | 条件単体の試験として記録。実Role全体のnegative testは未実施であり、完了条件への代替として認めるかはPhase 8で判断する |
 | ConfigEvidenceReadRoleのS3変更API拒否 | 対象prefix内の仮想object ARNでGetObject=allowed、PutObject/DeleteObject=implicitDeny | identity policyのSimulation確認済み。実Put/Delete・bucket設定変更は未試験。実データを変更しない検証方法と必要範囲をPhase 8で判断する |
 | 現在のIAM権限全体 | コード管理部分と一部手動変更の報告のみ | リスク再評価時に、手動管理policy・trust・権限合成を含め確認する。今回の文書照合で全AWS権限を監査済みとはしない |
@@ -45,14 +45,14 @@
 
 | 項目 | 共有済みの結果・範囲 |
 |---|---|
-| Config Recorder | Recording=True、LastStatus=SUCCESS。コード上は10種類・CONTINUOUS |
+| Config Recorder | Phase 6時点でRecording=True、LastStatus=SUCCESS。現行コードはNetwork 7種類追加後の17種類・CONTINUOUS。EC2 Instance／Volume／ENIは記録対象外 |
 | Config配送 | 2026-09-11再照会でSnapshot・HistoryともSUCCESS、StreamはNOT_APPLICABLE。SNS未採用の構成と整合 |
 | 実object暗号化 | HeadObjectのaws:kms、ExpectedKeyMatch=True |
 | 7 Managed Rules | 2026-09-11の同一API照会で、プロジェクトの7 RuleすべてCOMPLIANT |
 | Resource Timeline | 初期Configuration eventとCompliance eventを確認。既存設定からの意図的な変更前後比較は未検証 |
 | 権限制御 | MFA付きAssumeRoleと対象prefix一覧は成功。DescribeKey、Decrypt、別RoleへのAssumeRole、対象外prefix一覧はAccessDenied（過去の確認）。S3 identity policyとMFA条件単体のSimulation結果は上記の未実施範囲と併記する |
 | negative test用一時権限の撤去 | `iam:SimulateCustomPolicy`と`iam:SimulatePrincipalPolicy`を一時付与して評価後に削除。Simulation APIが再びAccessDeniedとなることを確認 |
-| Terraform整合 | 2026-09-11にenvs/devでterraform plan -input=false -no-color -detailed-exitcodeを再実行。終了コード0、No changes。applyは行っていない |
+| Terraform整合 | 2026-09-23に試験用IAM整理の利用者報告後、envs/devでterraform plan -input=false -no-color -detailed-exitcodeを再実行。終了コード0、No changes。applyは行っていない |
 | Budget Action | 10 USDのACTUALしきい値、AUTOMATIC、APPLY_IAM_POLICYを定義し、今回のplanで差分なし。課金による発火試験は未実施 |
 | KMS破壊的権限の縮小 | Key Policyから`DisableKey`と`ScheduleKeyDeletion`を除去し、`CancelKeyDeletion`と`EnableKey`の残存を確認。一時的な`PutKeyPolicy`を撤去し、最終planはNo changes |
 | CloudTrail用S3のHTTPS必須化 | `DenyInsecureTransport`を適用。最終planはNo changes、CloudTrailはLogging=True、直近配送時刻あり、配送errorなし |
@@ -78,8 +78,8 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 
 「通信の学習」と「継続的な設定監査」を区別する。前者はRoute・SG・実通信・Flow Logs、
 後者はConfigの構成履歴とRule評価で確認する。2台試験はAZ障害切替やInternet接続の実証ではない。
-Configのperiodic評価は24時間を基本候補とし、Ruleの対応trigger・parameter・対象resource数を
-実装前に確定する。変更時評価とperiodic評価、記録CI数を分けて費用を計算する。
+Configのperiodic評価は24時間とし、変更時評価専用のDefault SG Ruleには実行頻度を指定しない。
+Flow Logs RuleにはtrafficType=ALLを指定する。変更時評価とperiodic評価、記録CI数を分けて費用を計算する。
 最大10分集約を設定してもNitroのENIは1分以下となるため、1分のrecordを不合格にしない。
 
 ### 7.1 静的構成確認
@@ -127,6 +127,21 @@ Cleanup失敗時は残存ID、error、課金継続を記録して利用者に報
 - 最終`terraform plan`が`No changes`になることを確認する。
 - Phase 7.5を実施する場合は、このCleanupとPhase 7完了後に別試験計画を作る。
 
+### 7.4 実績と残確認（2026-09-23）
+
+| 対象 | 結果・根拠 |
+|---|---|
+| 通信試験 | 保存証跡と共有結果でHTTP 8080成功、受信側ENIの8080 ACCEPT／8081 REJECT・log-status=OKを照合済み |
+| Config監査 | P7 VPCのFlow Logs、Default SG、試験SGのSSH公開防止を対象別にCOMPLIANT確認。別VPCの不適合は対象外として分離 |
+| 削除記録 | 一時監査Roleで取得したConfigのS3原本本文に、試験SG 2個のResourceDeletedを照合済み。原本・照合結果・SHA-256は非公開で保存 |
+| 撤去後の再確認 | 9月23日のAPIで試験用の非terminated EC2・SG、P7 VPC内ENI、東京RegionのEBSはいずれも0件 |
+| 定常構成 | 9月23日のAPIでDefault SGのIngress／Egressなし、Flow Logs ACTIVE・ALL・配送SUCCESS、KMS一時監査statement不在を確認 |
+| 試験権限 | 利用者が試験用policyをDescribeのみへ縮小しアタッチ済みと報告。その後の参照APIとplanは成功。保存後policyの再取得と他policyとの権限合成は未確認 |
+
+静的構成の全要件と証跡の対応付け、手動IAMの最終確認、確定費用確認は残る。
+planのNo changesは手動IAMの撤去証明ではない。保持中のBaselineは未destroyであり、
+P7.5の実施判断およびPhase 8の完全削除とは区別する。
+
 ## 8. 学習終了時の完全削除・継続課金停止
 
 2026-09-12の合意により、学習完了後は本件Baselineを完全削除する。ここは終了条件であり、
@@ -149,6 +164,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 今回この保護も待機日数も変更しない。
 
 ## Activity Log
+
+- 2026-09-23: P7の未実装・未実施表記を構築／通信試験／Config原本照合／一時resource撤去の実績へ同期。手動IAM縮小は利用者報告とし、実体再取得・静的証跡整理・確定費用を残確認として維持。通常planはNo changes。新規ADR・AWS変更・pushなし。
 
 - 2026-09-17: Phase 7の設計に、resourceごとの作成理由、課金、dependency、destroy前提、削除後確認を追加。Terraformのdependency graphだけではS3全versionや遅延ENIを自動解決できないことを明記。AWS resourceの作成・削除は未実施。
 
