@@ -36,3 +36,23 @@ variable "config_bucket_name" {
   description = "Globally unique S3 bucket name for AWS Config configuration history"
   type        = string
 }
+variable "flow_logs_bucket_name" {
+  description = "Globally unique S3 bucket name for Phase 7 VPC Flow Logs"
+  type        = string
+}
+variable "enable_phase7_test" {
+  description = "Enable temporary Phase 7 network test resources"
+  type        = bool
+  default     = false
+}
+variable "enable_phase7_config_audit" {
+  description = "Enable the temporary role for Config history verification"
+  type        = bool
+  default     = false
+}
+
+variable "phase7_config_audit_object_key" {
+  description = "Exact S3 object key of the Config history file to verify"
+  type        = string
+  default     = ""
+}

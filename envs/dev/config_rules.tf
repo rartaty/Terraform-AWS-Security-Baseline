@@ -48,6 +48,31 @@ locals {
       source_identifier           = "CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED"
       maximum_execution_frequency = "TwentyFour_Hours"
     }
+
+    vpc_flow_logs_enabled = {
+      name                        = "vpc-flow-logs-enabled"
+      description                 = "Checks whether Amazon VPCs have Flow Logs enabled for ALL traffic."
+      source_identifier           = "VPC_FLOW_LOGS_ENABLED"
+      maximum_execution_frequency = "TwentyFour_Hours"
+
+      input_parameters = {
+        trafficType = "ALL"
+      }
+    }
+
+    vpc_default_security_group_closed = {
+      name                        = "vpc-default-security-group-closed"
+      description                 = "Checks whether default security groups allow inbound or outbound traffic."
+      source_identifier           = "VPC_DEFAULT_SECURITY_GROUP_CLOSED"
+      maximum_execution_frequency = null
+    }
+
+    incoming_ssh_disabled = {
+      name                        = "incoming-ssh-disabled"
+      description                 = "Checks whether security groups allow incoming SSH traffic."
+      source_identifier           = "INCOMING_SSH_DISABLED"
+      maximum_execution_frequency = "TwentyFour_Hours"
+    }
   }
 }
 
@@ -62,6 +87,8 @@ resource "aws_config_config_rule" "managed" {
     owner             = "AWS"
     source_identifier = each.value.source_identifier
   }
+
+  input_parameters = try(jsonencode(each.value.input_parameters), null)
 
   evaluation_mode {
     mode = "DETECTIVE"
