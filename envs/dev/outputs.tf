@@ -22,3 +22,22 @@ output "phase7_subnet_ids" {
   description = "Subnet IDs keyed by their Phase 7 network role"
   value       = { for key, subnet in aws_subnet.phase7 : key => subnet.id }
 }
+output "phase7_test_details" {
+  description = "Temporary test resource identifiers for evidence collection"
+
+  value = var.enable_phase7_test ? {
+    client = {
+      instance_id       = aws_instance.phase7_test_client[0].id
+      private_ip        = aws_instance.phase7_test_client[0].private_ip
+      eni_id            = aws_instance.phase7_test_client[0].primary_network_interface_id
+      security_group_id = aws_security_group.phase7_test_client[0].id
+    }
+
+    server = {
+      instance_id       = aws_instance.phase7_test_server[0].id
+      private_ip        = aws_instance.phase7_test_server[0].private_ip
+      eni_id            = aws_instance.phase7_test_server[0].primary_network_interface_id
+      security_group_id = aws_security_group.phase7_test_server[0].id
+    }
+  } : null
+}

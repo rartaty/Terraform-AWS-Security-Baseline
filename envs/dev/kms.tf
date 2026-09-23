@@ -13,6 +13,34 @@ resource "aws_kms_key" "security_logs" {
 }
 
 data "aws_iam_policy_document" "security_logs_key_policy" {
+  dynamic "statement" {
+    for_each = var.enable_phase7_config_audit ? [1] : []
+
+    content {
+      sid    = "AllowTemporaryPhase7ConfigAuditDecrypt"
+      effect = "Allow"
+
+      principals {
+        type        = "AWS"
+        identifiers = [aws_iam_role.phase7_config_audit[0].arn]
+      }
+
+      actions   = ["kms:Decrypt"]
+      resources = ["*"]
+
+      condition {
+        test     = "StringEquals"
+        variable = "kms:ViaService"
+        values   = ["s3.${var.aws_region}.amazonaws.com"]
+      }
+
+      condition {
+        test     = "StringEquals"
+        variable = "kms:EncryptionContext:aws:s3:arn"
+        values   = [local.phase7_config_audit_object_arn]
+      }
+    }
+  }
   statement {
     sid    = "AllowLogReaderDecryptCloudTrailLogs"
     effect = "Allow"

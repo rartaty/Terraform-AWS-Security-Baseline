@@ -20,7 +20,14 @@ resource "aws_config_configuration_recorder" "security_baseline" {
       "AWS::IAM::Policy",
       "AWS::GuardDuty::Detector",
       "AWS::AccessAnalyzer::Analyzer",
-      "AWS::Config::ResourceCompliance"
+      "AWS::Config::ResourceCompliance",
+      "AWS::EC2::VPC",
+      "AWS::EC2::Subnet",
+      "AWS::EC2::RouteTable",
+      "AWS::EC2::SecurityGroup",
+      "AWS::EC2::InternetGateway",
+      "AWS::EC2::NetworkAcl",
+      "AWS::EC2::FlowLog",
     ]
 
     recording_strategy {
