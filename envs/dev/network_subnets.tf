@@ -24,7 +24,7 @@ locals {
 }
 
 // A subnet allocates an address range within the learning VPC. It has no
-// Internet route on its own. Routes are deliberately added in a later step.
+// Internet route on its own. Route tables and associations are in network_routes.tf.
 resource "aws_subnet" "phase7" {
   for_each = local.phase7_subnets
 

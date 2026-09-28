@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-27
-- 最終更新日: 2026-09-11
+- 最終更新日: 2026-09-28（Phase 7実装状態を同期。残存riskの数値再評価は未実施）
 - 対象: 個人所有の単一AWSアカウント、dev環境、ap-northeast-1
 
 ## 1. 目的
@@ -450,12 +450,12 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 関連Data Flow | DF-05、DF-06 |
 | シナリオ | Security Group、route table、subnetまたはInternet Gatewayの設定不備により、想定していない送信元・宛先・portへの通信を許可する。またはFlow Logsの配送不備により、その通信を後から識別できない |
 | 影響 | 将来配置するresourceへの不正access、情報漏えい、侵害後の横展開につながる可能性がある |
-| 既存control | 検証用VPCとnetwork resourceは未構築。Phase 7設計ではNAT Gateway、専用public IPv4および常設EC2を作成しない方針 |
-| 追加予定control | 2 AZのPublic／Isolated Subnetと明示的なRoute association、Internet Gateway RouteのPublic限定、Public IPv4自動割当OFF、Default Security GroupのIngress／Egress削除、Source Security Group参照による最小許可、VPC全体のFlow Logs（ALL）、専用S3の公開防止・暗号化・HTTPS必須・30日Lifecycle、AWS Configによる継続評価 |
+| 既存control | 学習用VPC、2 AZのPublic／Isolated Subnet、明示的なRoute association、Public限定のInternet Gateway Route、Public IPv4自動割当OFF、Default SGのIngress／Egress閉鎖、VPC全体のFlow Logs（ALL）、専用S3の公開防止・暗号化・HTTPS必須・Lifecycle、AWS Config連携を実装済み。NAT Gateway、専用public IPv4および常設EC2は作成しない方針 |
+| 試験・継続確認 | 一時EC2／試験用SGによる許可・拒否通信と受信側ENIのACCEPT／REJECTを照合済み。一時resourceは撤去済み。2026-09-28にRoute、SubnetのPublic IPv4自動割当OFF、Default SG閉鎖、Flow Logs配送成功、対象VPCとDefault SGのCOMPLIANTを再確認。設定変更時にも対象別に検証する |
 | 固有risk | 発生可能性2 × 影響度3 = 6（高） |
-| 現在の残存risk | 対象resource未構築のため評価対象外 |
+| 現在の残存risk | 構築済みのため評価対象。実装・試験結果を踏まえた数値再評価は未実施であり、目標値の達成とは扱わない |
 | 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
-| 検証方法 | 一時EC2-AからEC2-Bの許可Portと非許可Portへ通信し、EC2-B側ENIのFlow LogでSource／Destination／Port／Action／Log Statusを照合する。S3 object到着後に一時resourceをdestroyする |
+| 検証方法 | 一時EC2-AからEC2-Bの許可Portと非許可Portへ通信し、EC2-B側ENIのFlow LogでSource／Destination／Port／Action／Log Statusを照合する。成否にかかわらず試験計画の待機・全体上限の早い方で試験を終了し、Cleanupへ進む。ログ到着待ちを理由に延長せず、削除失敗時は残存と課金継続を報告する。実施結果と残確認は試験計画を参照する |
 | 残存risk | Network設定が正しくても、将来配置するapplication自体の脆弱性や認証不備は別のriskとして残る。Security GroupはAllow ruleだけであり、既存connectionはrule変更後もconnection trackingの有効期間中継続する場合がある。Flow Logsも全packetを記録するPacket Captureではなく、配送はbest effortである |
 
 ## 9. Security control対応表
@@ -470,7 +470,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-06 | multi-region CloudTrail、management events、専用S3、HTTPS必須、SSE-KMS、30日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装・検証済み（CloudWatch Logs転送はADR 0005で見送り） | Phase 4 |
 | C-07 | GuardDuty Foundational Threat Detectionによる不審な操作・認証情報利用の検知。対象外のProtection Planは明示的に無効化 | TH-01、TH-09 | 実装済み | Phase 5 |
 | C-08 | IAM Access Analyzerのexternal access analyzer、Security Hub Essentials・CSPM・AWS Foundational Security Best Practicesによる外部公開・設定不備の検知 | TH-04、TH-07、TH-10 | 実装済み（Automation Rules・自動修復・有料addonは未採用） | Phase 5 |
-| C-09 | AWS Configによる選択resourceの継続的な構成履歴記録、専用S3へのSSE-KMS暗号化保存、7つのManaged Rulesによる24時間ごとまたは設定変更時の準拠評価 | TH-04、TH-05、TH-07、TH-10 | 実装済み | Phase 6 |
+| C-09 | AWS Configによる17 resource typeの継続記録、専用S3へのSSE-KMS暗号化保存、Terraformで明示管理する10個のManaged Rulesによる24時間ごとまたは設定変更時の準拠評価（Security Hub管理Ruleは別） | TH-04、TH-05、TH-07、TH-10 | 実装済み | Phase 6〜7 |
 | C-10 | AWS Budget、メール・Windows通知、Budget Actionによる高額リソース作成の自動抑止 | TH-09 | 実装済み | Phase 2 |
 | C-11 | Provider lock、`fmt`、`validate`、`plan`、手動承認、`No changes`確認 | TH-02、TH-06、TH-09 | 実装済み・継続運用 | 全Phase |
 | C-12 | 復旧・incident対応・destroy・残存resource確認 | TH-01〜TH-10 | 未実装 | Phase 8 |
@@ -500,7 +500,7 @@ recovery経路とIAM側のPutKeyPolicy許可を合わせて確認する。手動
 | TH-07 | S3 bucketの意図しない公開 | 6（高） | 3（中） | Phase 3〜6 |
 | TH-08 | KMS keyの誤設定・無効化・削除 | 3（中） | 2（低） | Phase 3、8 |
 | TH-09 | 不正利用・誤操作による想定外の課金 | 4（中） | 2（低） | 全Phase |
-| TH-10 | Network設定不備による意図しない通信許可 | 対象resource未構築 | 3（中） | Phase 7 |
+| TH-10 | Network設定不備による意図しない通信許可 | 構築・主要試験済み、数値再評価は未実施 | 3（中） | Phase 7 |
 
 現在「高」のriskは、未実装の対策に加え、実装済みcontrolでは防ぎきれない管理権限侵害などを反映している。
 今回の文書同期だけで既存risk scoreを自動的に引き下げない。

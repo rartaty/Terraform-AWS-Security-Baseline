@@ -2,7 +2,7 @@
 
 - 状態: 採用
 - 制定日: 2026-08-25
-- 更新日: 2026-09-12（条件付き概算・現行構成・終了方針を同期）
+- 更新日: 2026-09-28（Phase 7の実装状態を同期。料金単価・月額モデルの再見積りは未実施）
 - 対象リージョン: `ap-northeast-1`（東京）
 
 ## 1. 結論
@@ -25,7 +25,7 @@
 - 本番ワークロード、EC2常時稼働、NAT Gateway、Load Balancer、専用public IPv4は使わない。Phase 7のEC2はFlow Logs試験中だけ2台を一時作成し、同日中に削除する。
 - CloudTrailは管理イベントの最初のコピーだけをS3へ配信する。
 - CloudTrailのデータイベント、Insights、CloudTrail Lakeは使わない。
-- 初期概算ではCloudWatch LogsとVPC Flow Logsを各1 GB/月未満と仮定した。現在CloudWatch Logs転送は見送り、VPC Flow Logsは設計合意済み・未実装であり、apply前に再見積りする。
+- 初期概算ではCloudWatch LogsとVPC Flow Logsを各1 GB/月未満と仮定した。現在CloudWatch Logs転送は見送り、VPC Flow Logsは専用S3への配送を実装・確認済み。実際の配送量を使った月額モデルの更新は残る。
 - KMS customer managed keyは1個とし、CloudTrailとAWS Configで共有する。Phase 7のFlow Logs専用S3はSSE-S3とし、KMS利用主体を追加しない。
 - Security HubはEssentials相当の必要機能だけとし、Extended Planは使わない。
 - GuardDuty Protection Planは必要なものだけを選び、不要なplanは無効化する。
@@ -63,7 +63,10 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 - Phase 7.5: Firewall Endpoint、処理data、ログ、一時resourceを別見積り・別承認とする。現時点で今回の合計へ算入しない。
 - Phase 8: 最終試験・証跡取得・削除に伴うrequest等を計上する。destroy後の既発生料金の後日反映を継続課金と混同しない。
 
-### 実測への置換（未実施）
+### 実測への置換（暫定費用取得済み・モデル更新は未実施）
+
+2026-09-23に短期間のアカウント全体の暫定費用を取得済み。ただしPhase 7単独の費用でも
+確定請求でもなく、下記の利用量内訳に基づく月額モデルへの置換は未実施である。
 
 課金対象IAM数、月次CI数・評価数、GuardDuty使用量、S3容量・version・request、保持日数を取得する。
 短期間を月換算する場合は初回記録と平常変更を分離する。既存Default VPC等もConfigの対象になり得る。
@@ -91,7 +94,7 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 - 保存容量、PUT/GET等のrequest、データ転送などに従量課金される。
 - state、CloudTrail、Configの小規模ログだけなら少額だが、完全無料とは断定しない。
 - versioningにより古いobject versionも保存量に含まれるため、ログ保持期間とlifecycleを設計する。
-- CloudTrail・Config・予定Flow Logsは現行30日＋非現行30日。未更新objectは概ね60日後に完全削除対象となり、非現行期間も保存料金がかかる。UTC日付の丸め・非同期処理があり厳密な60日保証ではない。
+- CloudTrail・Config・Flow Logsは現行30日＋非現行30日。未更新objectは概ね60日後に完全削除対象となり、非現行期間も保存料金がかかる。UTC日付の丸め・非同期処理があり厳密な60日保証ではない。
 - 完全削除対象になった後のLifecycle処理遅延分は原則追加保存課金されない。学習終了時はLifecycle待ちにせず全versionを明示削除する。今回Lifecycleコードは変更しない。
 
 ### AWS KMS
@@ -133,7 +136,7 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 - configuration item、Config rule評価、conformance pack評価が課金対象である。
 - 継続記録ではconfiguration item数、定期記録では記録resource数と日数が費用に影響する。
 - 記録対象を必要なresource typeに限定し、少数のmanaged ruleから開始する。
-- 現行構成は10 resource typeのCONTINUOUS記録と7 Managed Rules。記録料金は実際のConfiguration Item数、評価料金はRuleごとの対象resource数・評価回数で見積もる。両者を単一の掛け算で算定しない。
+- 現行のcustomer-managed Recorderは17 resource typeのCONTINUOUS記録、Terraformで明示管理するManaged Rulesは10個（2026-09-28実体確認）。Security Hubが管理するRuleは別に存在し、10個をアカウント全体のRule数や評価費用の全対象とは扱わない。記録料金は実際のConfiguration Item数、評価料金はRuleごとの対象resource数・評価回数で見積もる。両者を単一の掛け算で算定しない。
 - CloudTrail・Config用S3は現行versionの期限切れが30日、非現行化後の削除が30日。保存から30日で物理削除される設定ではなく、非現行versionも保存料金に含まれる。
 
 ### Amazon VPCとVPC Flow Logs
@@ -143,7 +146,7 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 - Phase 7ではVPC全体の`ALL` trafficを最大10分で集約し、専用S3へ標準Text・Gzip形式で保存する。少量を前提とするが、上限料金ではない。
 - Nitro EC2のENIは指定にかかわらず実際の集約が1分以下になる。機能上の問題ではないが、10分設定によるログ削減を料金前提にしない。
 - 専用S3はSSE-S3、Versioning、現行・非現行versionとも30日Lifecycleとする。Flow Log objectは通常上書きしないが、Versioningを他のlog bucketと共通の保護層として採用する。
-- Phase 6へ7 resource type・3 Ruleを追加予定。既存resourceも対象になり得るため、増額を一律に少額とは断定しない。記録CIと評価件数を別々に積算する。
+- Phase 7で、Phase 6の10 resource type・7 Ruleへnetwork用7 resource type・3 Ruleを追加済み。既存resourceも対象になり得るため、増額を一律に少額とは断定しない。記録CIと評価件数を別々に積算する。
 - ACCEPT／REJECT試験ではEC2 2台と暗号化EBSを短時間だけ使用する。作成前に東京単価・時間を確認し、成功時または試験計画の待機期限・失敗時にCleanupする。
 - NAT Gateway、Load Balancer、public IPv4を追加すると別料金になるため、Phase 7では作成しない。
 - public IPv4は通常0.005 USD/時で、1個を1か月保持すると約3.60 USDになるため本件では作らない。
