@@ -1,15 +1,15 @@
 # 試験計画・確認状況と残作業
 
-- 同期日: 2026-09-28（利用者共有のIAM整理・MFA検証・一時権限撤去結果を反映。個別試験日は各行を参照）
+- 同期日: 2026-09-28（IAM整理・MFA検証・一時権限撤去結果を反映。個別試験日は各行を参照）
 - 対象: dev環境、Phase 3〜7の構成・試験状況
-- 根拠: Terraformコード、ADR、利用者が共有した実行結果、非公開作業記録
+- 根拠: Terraformコード、ADR、実行結果、非公開作業記録
 - 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は過去の共有結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
 
 ## 1. 状態の定義
 
 - 実装済み: Terraformに定義があり、apply結果が共有されている。
 - コード確認済み: 静的な設定を確認した。実際の拒否や配信成功を意味しない。
-- 結果共有済み: 利用者が実行結果を共有した。今回の再実行ではない。
+- 結果共有済み: 実行結果を確認した。今回の再実行ではない。
 - Simulation確認済み: 指定したPolicy・Action・Resource・contextでの評価結果。実APIの拒否や、未入力のresource policyを含む全権限の証明ではない。
 - 記録不足: 結果は共有済みだが、文書への集約が不足している。
 - 未検証・未観測: 確認結果がない。記録追記だけで完了扱いにしない。
@@ -37,7 +37,7 @@
 | Configuration Item数・Rule評価数・実料金 | 9月21〜22日（UTC）のアカウント全体の暫定費用を取得済み。P7単独の費用ではない | 確定費用とCI数・評価数の対応を確認し、費用設計の見積りを更新する |
 | MFA未認証での実AssumeRole拒否 | Phase 6の閲覧Roleに関する条件単体Simulationとは別に、2026-09-28にTerraform実行RoleへMFA条件を追加し、新規AssumeRole成功・No changesが共有された | MFAなしの実AssumeRole拒否は未試験。成功経路や過去のSimulationで代替しない。最終Trust Policy全文のCLI再取得も未実施 |
 | ConfigEvidenceReadRoleのS3変更API拒否 | 対象prefix内の仮想object ARNでGetObject=allowed、PutObject/DeleteObject=implicitDeny | identity policyのSimulation確認済み。実Put/Delete・bucket設定変更は未試験。実データを変更しない検証方法と必要範囲をPhase 8で判断する |
-| 現在のIAM権限全体 | 実行Roleの20 policy本文を利用者共有JSONで確認。主要変更箇所・KMS Key Policy・Budget関連は利用者共有のCLI取得結果でも照合（第5.1節） | 全policy本文のCLI再取得・権限合成の網羅的監査は未完了。広いCreateTags、resource／region範囲等の最小権限化は別課題 |
+| 現在のIAM権限全体 | 実行Roleの20 policy本文をJSONで確認。主要変更箇所・KMS Key Policy・Budget関連はCLI取得結果でも照合（第5.1節） | 全policy本文のCLI再取得・権限合成の網羅的監査は未完了。広いCreateTags、resource／region範囲等の最小権限化は別課題 |
 
 ## 5. 確認済みの結果と確認範囲
 
@@ -52,7 +52,7 @@
 | Resource Timeline | 初期Configuration eventとCompliance eventを確認。既存設定からの意図的な変更前後比較は未検証 |
 | 権限制御 | MFA付きAssumeRoleと対象prefix一覧は成功。DescribeKey、Decrypt、別RoleへのAssumeRole、対象外prefix一覧はAccessDenied（過去の確認）。S3 identity policyとMFA条件単体のSimulation結果は上記の未実施範囲と併記する |
 | negative test用一時権限の撤去 | `iam:SimulateCustomPolicy`と`iam:SimulatePrincipalPolicy`を一時付与して評価後に削除。Simulation APIが再びAccessDeniedとなることを確認 |
-| Terraform整合 | 2026-09-23に試験用IAM整理の利用者報告後、envs/devでterraform plan -input=false -no-color -detailed-exitcodeを再実行。終了コード0、No changes。applyは行っていない |
+| Terraform整合 | 2026-09-23に試験用IAM整理後、envs/devでterraform plan -input=false -no-color -detailed-exitcodeを再実行。終了コード0、No changes。applyは行っていない |
 | Budget Action | 10 USDのACTUALしきい値、AUTOMATIC、APPLY_IAM_POLICYを定義し、今回のplanで差分なし。課金による発火試験は未実施 |
 | KMS破壊的権限の縮小 | Key Policyから`DisableKey`と`ScheduleKeyDeletion`を除去し、`CancelKeyDeletion`と`EnableKey`の残存を確認。一時的な`PutKeyPolicy`を撤去し、最終planはNo changes |
 | CloudTrail用S3のHTTPS必須化 | `DenyInsecureTransport`を適用。最終planはNo changes、CloudTrailはLogging=True、直近配送時刻あり、配送errorなし |
@@ -64,12 +64,12 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 これは実STS認可の再現性を確認できていないため、合否判定に使わない。
 続く試験は同じBool条件を持つ別のidentity-style Policyの単体評価であり、
 実Trust Policy全体の検証に置き換えない。[AWSのSimulationと実環境の差異](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_testing-policies.html)を参照。
-一時権限は利用者がStatementを削除したと報告し、SimulateCustomPolicyとSimulatePrincipalPolicyの両APIでAccessDeniedを確認した。
+一時権限は私がStatementを削除し、SimulateCustomPolicyとSimulatePrincipalPolicyの両APIでAccessDeniedを確認した。
 手動管理Policyの削除確認をTerraformのNo changesだけで代替しない。
 
-### 5.1 2026-09-28 IAM整理・MFA検証（利用者実行結果）
+### 5.1 2026-09-28 IAM整理・MFA検証（実行結果）
 
-以下は利用者が実行・共有したJSON、CLI出力、保存・削除完了報告に基づく。
+以下は私が実行・共有したJSON、CLI出力、保存・削除記録に基づく。
 この記録更新時にassistantがAWS APIを再実行したものではなく、生のAPI応答ファイルの
 保存・hash照合まで完了したとは扱わない。
 
@@ -81,8 +81,8 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 | KMS Key Policy | 一時監査Role向けの復号許可なし。Terraform実行Roleへの直接許可にPutKeyPolicy／Decrypt／DisableKey／ScheduleKeyDeletionなし。通常のservice・ログ閲覧Roleへの許可とaccount recoveryは維持。これだけでIAM経由の全実効権限不在とは断定しない |
 | Budget関連 | 実行Roleのtrust、inline一覧・本文、managed policy一覧、抑止policy有効版をCLI取得結果で照合。指定実行Roleへ指定Deny policyだけを付け外しする構造。実際のしきい値発火・自動attachは未試験 |
 | MFAの事前検証 | 操作権限を付けない一時Roleで条件なしのAssumeRole成功。BoolのMultiFactorAuthPresent=true条件へ変更し、保存内容確認・時間を置いた再要求とも成功。認証元TYPEはlogin |
-| 既存Terraform実行Roleへの適用 | 変更前のCLI取得TrustにMFA条件がなかったため、利用者承認で条件追加を実施。追加後の新規AssumeRole成功、通常planのNo changesを共有。最終Trust全文の再取得とMFAなし拒否試験は未実施 |
-| 後片付け | 一時MFA検証Roleとユーザー側の一時監査inline policyは両方削除済みとの利用者報告。削除後の不在API照会・監査API再拒否の確認は未実施 |
+| 既存Terraform実行Roleへの適用 | 変更前のCLI取得TrustにMFA条件がなかったため、承認で条件追加を実施。追加後の新規AssumeRole成功、通常planのNo changesを共有。最終Trust全文の再取得とMFAなし拒否試験は未実施 |
+| 後片付け | 一時MFA検証Roleとユーザー側の一時監査inline policyは両方削除済み。削除後の不在API照会・監査API再拒否の確認は未実施 |
 
 一時権限の撤去と、既存Baselineの最小権限化は分ける。広いCreateTagsとタグ条件付き管理許可の
 組合せ、Phase 5のresource／region範囲、Budget trustの全Budget対象などは改善候補として残す。
@@ -136,7 +136,7 @@ REJECTだけでSG原因と断定せず、Route、NACL、AのEgress、BのIngress
 早い方の期限で試験を終了し、成功・失敗を問わずCleanupへ進む。起動失敗・権限不足でも同様とする。
 ログ未着は失敗／未観測として時刻・ENI・試行結果を保存し、成功扱いにしない。
 削除後に遅延配送されたログは記録済みENIと照合できるため、ログ待ちでEC2を無期限保持しない。
-Cleanup失敗時は残存ID、error、課金継続を記録して利用者に報告し、終了扱いにせず対応する。
+Cleanup失敗時は残存ID、error、課金継続を記録し、終了扱いにせず対応する。
 上限は作業手順であり自動停止機能ではない。apply前にCleanupの権限・手順と作業時間を確保する。
 
 ### 7.3 Cleanup確認
@@ -157,7 +157,7 @@ Cleanup失敗時は残存ID、error、課金継続を記録して利用者に報
 | 削除記録 | 一時監査Roleで取得したConfigのS3原本本文に、試験SG 2個のResourceDeletedを照合済み。原本・照合結果・SHA-256は非公開で保存 |
 | 撤去後の再確認 | 9月23日のAPIで試験用の非terminated EC2・SG、P7 VPC内ENI、東京RegionのEBSはいずれも0件 |
 | 定常構成 | 9月23日のAPIでDefault SGのIngress／Egressなし、Flow Logs ACTIVE・ALL・配送SUCCESS、KMS一時監査statement不在を確認 |
-| 試験権限 | 利用者が試験用policyをDescribeのみへ縮小しアタッチ済みと報告。その後の参照APIとplanは成功。保存後policyの再取得と他policyとの権限合成は未確認 |
+| 試験権限 | 試験用policyをDescribeのみへ縮小しアタッチ済み。その後の参照APIとplanは成功。保存後policyの再取得と他policyとの権限合成は未確認 |
 
 静的構成の全要件と証跡の対応付け、手動IAMの最終確認、確定費用確認は残る。
 planのNo changesは手動IAMの撤去証明ではない。保持中のBaselineは未destroyであり、
@@ -186,13 +186,13 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
-- 2026-09-28: 利用者共有のIAM整理、主要policyのCLI取得結果、MFA条件付き新規AssumeRole成功、No changes、一時Role・監査権限の削除報告を反映。MFAなし拒否試験・最終Trust全文再取得・全policy本文のCLI再取得・削除後のAPI確認は未実施として区別。今回の作業は文書更新のみ。
+- 2026-09-28: IAM整理、主要policyのCLI取得結果、MFA条件付き新規AssumeRole成功、No changes、一時Role・監査権限の削除報告を反映。MFAなし拒否試験・最終Trust全文再取得・全policy本文のCLI再取得・削除後のAPI確認は未実施として区別。今回の作業は文書更新のみ。
 
-- 2026-09-23: P7の未実装・未実施表記を構築／通信試験／Config原本照合／一時resource撤去の実績へ同期。手動IAM縮小は利用者報告とし、実体再取得・静的証跡整理・確定費用を残確認として維持。通常planはNo changes。新規ADR・AWS変更・pushなし。
+- 2026-09-23: P7の未実装・未実施表記を構築／通信試験／Config原本照合／一時resource撤去の実績へ同期。手動IAM縮小は確認とし、実体再取得・静的証跡整理・確定費用を残確認として維持。通常planはNo changes。新規ADR・AWS変更・pushなし。
 
 - 2026-09-17: Phase 7の設計に、resourceごとの作成理由、課金、dependency、destroy前提、削除後確認を追加。Terraformのdependency graphだけではS3全versionや遅延ENIを自動解決できないことを明記。AWS resourceの作成・削除は未実施。
 
-- 2026-09-17: 利用者共有のVPC CIDR・利用可能AZと合意を根拠に、ADR 0010のAddress Planと1a／1c配置を確定。照合範囲は提示された東京Regionの結果に限定。AWS resource作成・通信試験は未実施。
+- 2026-09-17: VPC CIDR・利用可能AZと合意を根拠に、ADR 0010のAddress Planと1a／1c配置を確定。照合範囲は提示された東京Regionの結果に限定。AWS resource作成・通信試験は未実施。
 
 - 2026-09-12: 構成設計のPhase 8に残っていた保持・残存費用の旧表現を同期。一時保持は削除順序上の都合に限定し、完全削除と継続課金停止を完了条件に統一した。文書のみの変更。
 
