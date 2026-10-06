@@ -1,0 +1,8 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": "s3:GetObject", "Resource": "<CONFIG_BUCKET_ARN>/AWSLogs/<ACCOUNT_ID>/Config/*" },
+    { "Effect": "Allow", "Action": "s3:ListBucket", "Resource": "<CONFIG_BUCKET_ARN>", "Condition": { "StringLike": { "s3:prefix": "AWSLogs/<ACCOUNT_ID>/Config/*" } } },
+    { "Effect": "Deny", "NotAction": ["s3:GetObject", "s3:ListBucket"], "Resource": "*" }
+  ]
+}

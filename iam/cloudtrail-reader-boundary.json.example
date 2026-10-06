@@ -1,0 +1,9 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": "s3:GetObject", "Resource": ["<CLOUDTRAIL_BUCKET_ARN>/AWSLogs/<ACCOUNT_ID>/CloudTrail/*", "<CLOUDTRAIL_BUCKET_ARN>/AWSLogs/<ACCOUNT_ID>/CloudTrail-Digest/*"] },
+    { "Effect": "Allow", "Action": "s3:ListBucket", "Resource": "<CLOUDTRAIL_BUCKET_ARN>", "Condition": { "StringLike": { "s3:prefix": ["AWSLogs/<ACCOUNT_ID>/CloudTrail/*", "AWSLogs/<ACCOUNT_ID>/CloudTrail-Digest/*"] } } },
+    { "Effect": "Allow", "Action": "kms:Decrypt", "Resource": "<SECURITY_LOGS_KEY_ARN>", "Condition": { "StringLike": { "kms:EncryptionContext:aws:cloudtrail:arn": "arn:aws:cloudtrail:*:<ACCOUNT_ID>:trail/terraform-aws-security-baseline-dev-trail" } } },
+    { "Effect": "Deny", "NotAction": ["s3:GetObject", "s3:ListBucket", "kms:Decrypt"], "Resource": "*" }
+  ]
+}
