@@ -116,7 +116,7 @@ Trust Boundaryとは、管理主体または信頼条件が異なる領域の境
 ### TB-01: Windows PCとAWS認証の境界
 
 個人所有のWindows PCは、AWSアカウントの外部に存在する。
-利用者はInternet経由で`aws login`を実行し、
+利用者本人はInternet経由で`aws login`を実行し、
 AWSのsign-inとMFAを経て一時認証情報を取得する。
 
 この境界では、偽のsign-in画面による認証情報の窃取、
@@ -147,8 +147,8 @@ TerraformExecutionRoleが操作できるAWS resourceを必要最小限にする�
 
 2026-09-28のCLI結果では、TerraformExecutionRoleのTrustにMFA条件がなかった。
 既存の接続を止めないよう操作権限のない一時Roleで条件付きAssumeRoleの成功を確認した後、
-利用者承認により既存Roleへ`Bool: aws:MultiFactorAuthPresent = true`を追加した。
-新規AssumeRole成功と通常planのNo changesが共有され、一時Role・監査権限は削除済みとの報告。
+承認により既存Roleへ`Bool: aws:MultiFactorAuthPresent = true`を追加した。
+新規AssumeRole成功と通常planのNo changesが共有され、一時Role・監査権限は削除済み。
 これは今回のlogin sessionによる成功経路の確認であり、MFAなしの拒否試験や最終Trust全文の
 CLI再取得は未実施である。詳細と確認限界は[試験計画5.1](05_test_plan.md)を参照する。
 
@@ -180,7 +180,7 @@ AWS resourceの不正な作成・変更・削除を脅威として扱う。
 対策として、AWS Providerのversionとchecksumを
 `.terraform.lock.hcl`で固定する。
 Apply前に`terraform fmt`、`terraform validate`、
-`terraform plan`と変更差分を確認し、利用者が手動で承認する。
+`terraform plan`と変更差分を確認し、本人が手動で承認する。
 
 TerraformExecutionRoleのpermissionを必要最小限にし、
 AWS APIへの通信にはHTTPSを使用する。
