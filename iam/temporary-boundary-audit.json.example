@@ -1,0 +1,45 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadBaselineRoles",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:ListRolePolicies",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies"
+      ],
+      "Resource": [
+        "arn:aws:iam::<ACCOUNT_ID>:role/TerraformExecutionRole",
+        "arn:aws:iam::<ACCOUNT_ID>:role/BudgetActionExecutionRole",
+        "arn:aws:iam::<ACCOUNT_ID>:role/CloudTrailLogReadRole",
+        "arn:aws:iam::<ACCOUNT_ID>:role/ConfigEvidenceReadRole"
+      ]
+    },
+    {
+      "Sid": "ReadOperatorPermissions",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetUser",
+        "iam:ListUserPolicies",
+        "iam:GetUserPolicy",
+        "iam:ListAttachedUserPolicies",
+        "iam:ListGroupsForUser"
+      ],
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:user/terraform-operator"
+    },
+    {
+      "Sid": "ReadCustomerManagedPolicyDocuments",
+      "Effect": "Allow",
+      "Action": ["iam:GetPolicy", "iam:GetPolicyVersion"],
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:policy/*"
+    },
+    {
+      "Sid": "ReadAwsManagedPolicyDocuments",
+      "Effect": "Allow",
+      "Action": ["iam:GetPolicy", "iam:GetPolicyVersion"],
+      "Resource": "arn:aws:iam::aws:policy/*"
+    }
+  ]
+}
