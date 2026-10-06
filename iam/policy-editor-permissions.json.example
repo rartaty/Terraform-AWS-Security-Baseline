@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["iam:GetRole", "iam:ListRolePolicies", "iam:GetRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy"],
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/TerraformExecutionRole"
+    },
+    {
+      "Effect": "Deny",
+      "NotAction": ["iam:GetRole", "iam:ListRolePolicies", "iam:GetRolePolicy", "iam:PutRolePolicy", "iam:DeleteRolePolicy"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Deny", "Action": "iam:*",
+      "NotResource": "arn:aws:iam::<ACCOUNT_ID>:role/TerraformExecutionRole"
+    }
+  ]
+}

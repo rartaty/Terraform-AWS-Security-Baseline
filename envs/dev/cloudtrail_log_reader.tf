@@ -14,9 +14,10 @@ data "aws_iam_policy_document" "cloudtrail_log_reader_trust" {
 }
 
 resource "aws_iam_role" "cloudtrail_log_reader" {
-  name               = "CloudTrailLogReadRole"
-  description        = "Read-only role for this project's CloudTrail logs"
-  assume_role_policy = data.aws_iam_policy_document.cloudtrail_log_reader_trust.json
+  name                 = "CloudTrailLogReadRole"
+  description          = "Read-only role for this project's CloudTrail logs"
+  assume_role_policy   = data.aws_iam_policy_document.cloudtrail_log_reader_trust.json
+  permissions_boundary = var.cloudtrail_reader_boundary_arn
 }
 
 data "aws_iam_policy_document" "cloudtrail_log_reader_permissions" {

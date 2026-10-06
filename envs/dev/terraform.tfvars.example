@@ -6,3 +6,7 @@ flow_logs_bucket_name = "replace-with-globally-unique-flow-logs-bucket-name"
 # Temporary tests remain disabled during normal operation.
 enable_phase7_test         = false
 enable_phase7_config_audit = false
+
+# Set the exact root-managed policy ARNs when deploying the reader boundaries.
+cloudtrail_reader_boundary_arn = null
+config_reader_boundary_arn     = null

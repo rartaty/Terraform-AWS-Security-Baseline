@@ -56,3 +56,15 @@ variable "phase7_config_audit_object_key" {
   type        = string
   default     = ""
 }
+
+variable "cloudtrail_reader_boundary_arn" {
+  description = "Root-managed CloudTrail reader boundary ARN; null until the staged IAM migration"
+  type        = string
+  default     = null
+}
+
+variable "config_reader_boundary_arn" {
+  description = "Root-managed Config reader boundary ARN; null until the staged IAM migration"
+  type        = string
+  default     = null
+}

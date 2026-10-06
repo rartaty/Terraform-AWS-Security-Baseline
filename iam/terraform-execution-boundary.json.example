@@ -1,0 +1,105 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*", "ec2:AssociateRouteTable", "ec2:AttachInternetGateway",
+        "ec2:CreateFlowLogs", "ec2:CreateInternetGateway", "ec2:CreateRoute", "ec2:CreateRouteTable",
+        "ec2:CreateSubnet", "ec2:CreateTags", "ec2:CreateVpc", "ec2:DeleteFlowLogs",
+        "ec2:DeleteInternetGateway", "ec2:DeleteRoute", "ec2:DeleteRouteTable", "ec2:DeleteSubnet",
+        "ec2:DeleteVpc", "ec2:DetachInternetGateway", "ec2:DisassociateRouteTable",
+        "ec2:ModifySubnetAttribute", "ec2:ModifyVpcAttribute", "ec2:RevokeSecurityGroupEgress",
+        "ec2:RevokeSecurityGroupIngress",
+        "config:Describe*", "config:Get*", "config:List*", "config:DeleteConfigRule",
+        "config:DeleteConfigurationRecorder", "config:DeleteDeliveryChannel", "config:DeliverConfigSnapshot",
+        "config:PutConfigRule", "config:PutConfigurationRecorder", "config:PutDeliveryChannel",
+        "config:SelectResourceConfig", "config:StartConfigRulesEvaluation", "config:StartConfigurationRecorder",
+        "config:StopConfigurationRecorder", "config:TagResource", "config:UntagResource",
+        "access-analyzer:CreateAnalyzer", "access-analyzer:DeleteAnalyzer", "access-analyzer:Get*",
+        "access-analyzer:List*", "access-analyzer:TagResource",
+        "access-analyzer:UntagResource", "access-analyzer:UpdateAnalyzer",
+        "guardduty:CreateDetector", "guardduty:DeleteDetector", "guardduty:Get*", "guardduty:List*",
+        "guardduty:TagResource", "guardduty:UntagResource", "guardduty:UpdateDetector",
+        "securityhub:BatchDisableStandards", "securityhub:BatchEnableStandards", "securityhub:Describe*",
+        "securityhub:DisableSecurityHub", "securityhub:DisableSecurityHubV2",
+        "securityhub:EnableSecurityHub", "securityhub:EnableSecurityHubV2", "securityhub:GetEnabledStandards",
+        "securityhub:ListTagsForResource", "securityhub:TagResource", "securityhub:UntagResource",
+        "securityhub:UpdateSecurityHubConfiguration", "logs:CreateLogDelivery", "logs:DeleteLogDelivery",
+        "network-firewall:ListFirewalls"
+      ],
+      "Resource": "*",
+      "Condition": { "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetBucket*", "s3:Get*Configuration", "s3:ListBucket", "s3:CreateBucket",
+        "s3:DeleteBucket", "s3:DeleteBucketPolicy", "s3:PutBucketOwnershipControls", "s3:PutBucketPolicy",
+        "s3:PutBucketPublicAccessBlock", "s3:PutBucketTagging", "s3:PutBucketVersioning",
+        "s3:PutEncryptionConfiguration", "s3:PutLifecycleConfiguration"],
+      "Resource": ["<STATE_BUCKET_ARN>", "<CLOUDTRAIL_BUCKET_ARN>", "<CONFIG_BUCKET_ARN>", "<FLOW_LOGS_BUCKET_ARN>"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:ListAllMyBuckets", "s3:GetAccountPublicAccessBlock", "s3:PutAccountPublicAccessBlock", "ce:GetCostAndUsage"],
+      "Resource": "*"
+    },
+    { "Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject"], "Resource": "<STATE_BUCKET_ARN>/envs/dev/terraform.tfstate" },
+    { "Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"], "Resource": "<STATE_BUCKET_ARN>/envs/dev/terraform.tfstate.tflock" },
+    {
+      "Effect": "Allow",
+      "Action": ["cloudtrail:AddTags", "cloudtrail:CreateTrail", "cloudtrail:DeleteTrail", "cloudtrail:Get*", "cloudtrail:ListTags",
+        "cloudtrail:PutEventSelectors", "cloudtrail:RemoveTags", "cloudtrail:StartLogging", "cloudtrail:StopLogging", "cloudtrail:UpdateTrail"],
+      "Resource": "arn:aws:cloudtrail:ap-northeast-1:<ACCOUNT_ID>:trail/terraform-aws-security-baseline-dev-trail"
+    },
+    { "Effect": "Allow", "Action": ["cloudtrail:DescribeTrails", "cloudtrail:ListTrails"], "Resource": "*" },
+    {
+      "Effect": "Allow",
+      "Action": ["budgets:CreateBudgetAction", "budgets:DeleteBudgetAction", "budgets:DescribeBudget*",
+        "budgets:ListTagsForResource", "budgets:ModifyBudget",
+        "budgets:TagResource", "budgets:UntagResource", "budgets:UpdateBudgetAction", "budgets:ViewBudget"],
+      "Resource": "arn:aws:budgets::<ACCOUNT_ID>:budget/terraform-aws-security-baseline-*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["kms:DescribeKey", "kms:GetKeyPolicy", "kms:UpdateKeyDescription", "kms:GetKeyRotationStatus",
+        "kms:EnableKeyRotation", "kms:DisableKeyRotation", "kms:ListResourceTags", "kms:TagResource",
+        "kms:UntagResource", "kms:EnableKey", "kms:CancelKeyDeletion"],
+      "Resource": "<SECURITY_LOGS_KEY_ARN>"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iam:GetRole*", "iam:List*Role*", "iam:UpdateRole*",
+        "iam:UpdateAssumeRolePolicy", "iam:DeleteRole", "iam:TagRole", "iam:UntagRole", "iam:PutRolePolicy", "iam:DeleteRolePolicy"],
+      "Resource": ["arn:aws:iam::<ACCOUNT_ID>:role/CloudTrailLogReadRole", "arn:aws:iam::<ACCOUNT_ID>:role/ConfigEvidenceReadRole"]
+    },
+    {
+      "Effect": "Allow", "Action": "iam:CreateRole",
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/CloudTrailLogReadRole",
+      "Condition": { "ArnEquals": { "iam:PermissionsBoundary": "arn:aws:iam::<ACCOUNT_ID>:policy/BaselineCloudTrailReaderBoundary" } }
+    },
+    {
+      "Effect": "Allow", "Action": "iam:CreateRole",
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/ConfigEvidenceReadRole",
+      "Condition": { "ArnEquals": { "iam:PermissionsBoundary": "arn:aws:iam::<ACCOUNT_ID>:policy/BaselineConfigReaderBoundary" } }
+    },
+    {
+      "Effect": "Allow", "Action": "iam:PassRole", "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/BudgetActionExecutionRole",
+      "Condition": { "StringEquals": { "iam:PassedToService": "budgets.amazonaws.com" } }
+    },
+    {
+      "Effect": "Allow", "Action": "iam:GetRole",
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig"
+    },
+    {
+      "Effect": "Allow", "Action": "iam:PassRole",
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/aws-service-role/config.amazonaws.com/AWSServiceRoleForConfig",
+      "Condition": { "StringEquals": { "iam:PassedToService": "config.amazonaws.com" } }
+    },
+    {
+      "Effect": "Allow", "Action": "iam:CreateServiceLinkedRole", "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/aws-service-role/*",
+      "Condition": { "StringEquals": { "iam:AWSServiceName": ["access-analyzer.amazonaws.com", "guardduty.amazonaws.com", "securityhub.amazonaws.com", "securityhubv2.amazonaws.com"] } }
+    },
+    { "Effect": "Deny", "Action": ["iam:PutRolePermissionsBoundary", "iam:DeleteRolePermissionsBoundary", "sts:AssumeRole", "kms:PutKeyPolicy", "kms:DisableKey", "kms:ScheduleKeyDeletion"], "Resource": "*" }
+  ]
+}
