@@ -145,7 +145,7 @@ IAM userが引き受けられるRoleと、
 TerraformExecutionRoleが操作できるAWS resourceを必要最小限にする。
 `AssumeRole`とRoleによるAWS操作はCloudTrailで記録する。
 
-2026-09-28の利用者共有CLI結果では、TerraformExecutionRoleのTrustにMFA条件がなかった。
+2026-09-28のCLI結果では、TerraformExecutionRoleのTrustにMFA条件がなかった。
 既存の接続を止めないよう操作権限のない一時Roleで条件付きAssumeRoleの成功を確認した後、
 利用者承認により既存Roleへ`Bool: aws:MultiFactorAuthPresent = true`を追加した。
 新規AssumeRole成功と通常planのNo changesが共有され、一時Role・監査権限は削除済みとの報告。
