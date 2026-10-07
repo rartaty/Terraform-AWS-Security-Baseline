@@ -35,7 +35,7 @@
         "ec2:DescribeImages", "ec2:DescribeInstances", "ec2:DescribeInstanceAttribute",
         "ec2:DescribeInstanceCreditSpecifications", "ec2:DescribeInstanceTypes", "ec2:DescribeVolumes",
         "ec2:DescribeNetworkInterfaces", "ec2:DescribeVpcEndpoints", "ec2:DescribeNetworkAcls",
-        "logs:DescribeLogGroups", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"
+        "logs:DescribeLogGroups", "logs:DescribeResourcePolicies", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"
       ],
       "Resource": "*"
     },

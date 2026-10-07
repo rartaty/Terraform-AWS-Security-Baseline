@@ -31,7 +31,7 @@
     {
       "Sid": "RequiredUnscopedDeliveryPermissionsInTokyo",
       "Effect": "Allow",
-      "Action": ["logs:DescribeLogGroups", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"],
+      "Action": ["logs:DescribeLogGroups", "logs:DescribeResourcePolicies", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"],
       "Resource": "*",
       "Condition": { "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
     },
