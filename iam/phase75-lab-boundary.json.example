@@ -1,0 +1,112 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": ["ec2:*", "network-firewall:*", "logs:*"],
+      "Resource": "*",
+      "Condition": { "StringNotEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
+    },
+    {
+      "Effect": "Deny",
+      "Action": ["iam:*", "sts:AssumeRole", "logs:PutResourcePolicy", "logs:DeleteResourcePolicy"],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "network-firewall:CreateFirewall", "network-firewall:CreateFirewallPolicy", "network-firewall:CreateRuleGroup",
+        "network-firewall:TagResource", "network-firewall:DescribeFirewall", "network-firewall:DescribeLoggingConfiguration",
+        "network-firewall:UpdateLoggingConfiguration", "network-firewall:DeleteFirewall", "network-firewall:AssociateFirewallPolicy",
+        "network-firewall:DescribeFirewallPolicy", "network-firewall:DeleteFirewallPolicy", "network-firewall:DescribeRuleGroup",
+        "network-firewall:UpdateRuleGroup", "network-firewall:DeleteRuleGroup", "network-firewall:ListTagsForResource"
+      ],
+      "Resource": [
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:firewall/terraform-aws-security-baseline-dev-phase75-firewall",
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:firewall-policy/terraform-aws-security-baseline-dev-phase75-policy",
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:stateful-rulegroup/terraform-aws-security-baseline-dev-phase75-http-rule"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeAvailabilityZones", "ec2:DescribeVpcs", "ec2:DescribeSubnets",
+        "ec2:DescribeRouteTables", "ec2:DescribeSecurityGroups", "ec2:DescribeSecurityGroupRules",
+        "ec2:DescribeImages", "ec2:DescribeInstances", "ec2:DescribeInstanceAttribute",
+        "ec2:DescribeInstanceCreditSpecifications", "ec2:DescribeInstanceTypes", "ec2:DescribeVolumes",
+        "ec2:DescribeNetworkInterfaces", "ec2:DescribeVpcEndpoints", "ec2:DescribeNetworkAcls",
+        "logs:DescribeLogGroups", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:CreateSubnet", "ec2:CreateRouteTable", "ec2:CreateSecurityGroup", "ec2:DescribeVpcAttribute"],
+      "Resource": "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:vpc/<VPC_ID>"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:CreateSubnet", "ec2:CreateRouteTable", "ec2:CreateSecurityGroup"],
+      "Resource": ["arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:subnet/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:route-table/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:security-group/*"],
+      "Condition": { "StringEquals": { "aws:RequestTag/Purpose": "phase75-firewall-test" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:DeleteSubnet", "ec2:ModifySubnetAttribute", "ec2:DeleteRouteTable", "ec2:AssociateRouteTable", "ec2:DisassociateRouteTable", "ec2:CreateRoute", "ec2:DeleteRoute", "ec2:DeleteSecurityGroup", "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress", "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress", "ec2:RunInstances", "ec2:TerminateInstances", "ec2:GetConsoleOutput", "ec2:ModifyInstanceCreditSpecification", "ec2:DeleteVolume"],
+      "Resource": ["arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:subnet/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:route-table/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:security-group/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:instance/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:volume/*"],
+      "Condition": { "StringEquals": { "aws:ResourceTag/Purpose": "phase75-firewall-test" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ec2:RunInstances", "ec2:CreateTags", "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress"],
+      "Resource": ["arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:instance/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:volume/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:subnet/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:route-table/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:security-group/*", "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:security-group-rule/*"],
+      "Condition": { "StringEquals": { "aws:RequestTag/Purpose": "phase75-firewall-test" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:ap-northeast-1::image/<AMI_ID>"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:network-interface/*",
+      "Condition": { "ArnEquals": { "ec2:Vpc": "arn:aws:ec2:ap-northeast-1:<ACCOUNT_ID>:vpc/<VPC_ID>" }, "Bool": { "ec2:AssociatePublicIpAddress": "false" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:PutRetentionPolicy", "logs:ListTagsForResource", "logs:DescribeLogStreams", "logs:FilterLogEvents", "logs:GetLogEvents", "logs:TagResource"],
+      "Resource": ["arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-alert", "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-alert:*", "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-flow", "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-flow:*"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetBucketLocation", "s3:ListBucket"],
+      "Resource": "<STATE_BUCKET_ARN>"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "<STATE_BUCKET_ARN>/labs/phase75/terraform.tfstate"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "<STATE_BUCKET_ARN>/labs/phase75/terraform.tfstate.tflock"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt", "kms:DescribeKey", "kms:GenerateDataKeyWithoutPlaintext", "kms:ReEncryptFrom", "kms:ReEncryptTo"],
+      "Resource": "<EBS_KEY_ARN>",
+      "Condition": { "StringEquals": { "kms:ViaService": "ec2.ap-northeast-1.amazonaws.com", "kms:CallerAccount": "<ACCOUNT_ID>" } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "kms:CreateGrant",
+      "Resource": "<EBS_KEY_ARN>",
+      "Condition": {
+        "StringEquals": { "kms:ViaService": "ec2.ap-northeast-1.amazonaws.com", "kms:CallerAccount": "<ACCOUNT_ID>" },
+        "Bool": { "kms:GrantIsForAWSResource": "true" }
+      }
+    }
+  ]
+}

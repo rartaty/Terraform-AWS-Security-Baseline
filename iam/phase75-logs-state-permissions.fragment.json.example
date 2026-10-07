@@ -1,0 +1,64 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ManageOnlyNamedLabLogGroups",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogGroup", "logs:DeleteLogGroup", "logs:PutRetentionPolicy", "logs:DescribeLogStreams", "logs:FilterLogEvents"],
+      "Resource": [
+        "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-alert:*",
+        "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-flow:*"
+      ]
+    },
+    {
+      "Sid": "TagOnlyNamedLabLogGroups",
+      "Effect": "Allow",
+      "Action": ["logs:TagResource", "logs:ListTagsForResource"],
+      "Resource": [
+        "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-alert",
+        "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-flow"
+      ]
+    },
+    {
+      "Sid": "ReadOnlyLabLogStreams",
+      "Effect": "Allow",
+      "Action": "logs:GetLogEvents",
+      "Resource": [
+        "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-alert:log-stream:*",
+        "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-flow:log-stream:*"
+      ]
+    },
+    {
+      "Sid": "RequiredUnscopedDeliveryPermissionsInTokyo",
+      "Effect": "Allow",
+      "Action": ["logs:DescribeLogGroups", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"],
+      "Resource": "*",
+      "Condition": { "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
+    },
+    {
+      "Sid": "LocateExistingStateBucket",
+      "Effect": "Allow",
+      "Action": "s3:GetBucketLocation",
+      "Resource": "<STATE_BUCKET_ARN>"
+    },
+    {
+      "Sid": "ListOnlyLabStateAndWorkspacePrefix",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "<STATE_BUCKET_ARN>",
+      "Condition": { "StringLike": { "s3:prefix": ["labs/phase75/terraform.tfstate*", "labs/phase75/workspaces/*"] } }
+    },
+    {
+      "Sid": "ReadAndWriteOnlyLabState",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject"],
+      "Resource": "<STATE_BUCKET_ARN>/labs/phase75/terraform.tfstate"
+    },
+    {
+      "Sid": "UseOnlyLabStateLock",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": "<STATE_BUCKET_ARN>/labs/phase75/terraform.tfstate.tflock"
+    }
+  ]
+}
