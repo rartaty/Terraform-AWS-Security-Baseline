@@ -120,8 +120,65 @@ if ($phase75DenyRegion.Count -ne 1 -or $phase75DenyRegion[0].Effect -ne 'Deny' -
     [DateTimeOffset]$phase75DenyExpiry[0].Condition.DateGreaterThanEquals.'aws:CurrentTime' -ne [DateTimeOffset]$phase75Substitutions['<SETUP_EXPIRY_UTC>']) {
     throw 'Unexpected setup Region or expiry deny.'
 }
+$phase75FirewallSetupTrust = $phase75Policies['phase75-firewall-policy-setup-trust.json.example']
+$phase75FirewallSetup = $phase75Policies['phase75-firewall-policy-setup-permissions.json.example']
+$phase75FirewallSetupActions = @(
+    'network-firewall:CreateFirewallPolicy', 'network-firewall:TagResource',
+    'network-firewall:DescribeFirewallPolicy', 'network-firewall:DescribeRuleGroup',
+    'network-firewall:ListRuleGroups'
+)
+if (@($phase75FirewallSetupTrust.Statement).Count -ne 1 -or
+    $phase75FirewallSetupTrust.Statement[0].Effect -ne 'Allow' -or
+    $phase75FirewallSetupTrust.Statement[0].Action -ne 'sts:AssumeRole' -or
+    $phase75FirewallSetupTrust.Statement[0].Principal.AWS -ne "arn:aws:iam::${phase75Account}:user/terraform-operator" -or
+    $phase75FirewallSetupTrust.Statement[0].Condition.Bool.'aws:MultiFactorAuthPresent' -ne 'true' -or
+    [DateTimeOffset]$phase75FirewallSetupTrust.Statement[0].Condition.DateLessThan.'aws:CurrentTime' -ne [DateTimeOffset]$phase75Substitutions['<SETUP_EXPIRY_UTC>']) {
+    throw 'Unexpected firewall policy setup trust.'
+}
+if (@($phase75FirewallSetup.Statement).Count -ne 7) { throw 'Expected seven firewall policy setup permission statements.' }
+$phase75FirewallSetupAllows = @($phase75FirewallSetup.Statement | Where-Object Effect -eq 'Allow')
+if ($phase75FirewallSetupAllows.Count -ne 4) { throw 'Unexpected firewall setup Allow count.' }
+foreach ($phase75Statement in $phase75FirewallSetupAllows) {
+    if ($phase75Statement.Condition.StringEquals.'aws:RequestedRegion' -ne 'ap-northeast-1' -or
+        [DateTimeOffset]$phase75Statement.Condition.DateLessThan.'aws:CurrentTime' -ne [DateTimeOffset]$phase75Substitutions['<SETUP_EXPIRY_UTC>']) {
+        throw 'Missing firewall setup Region or expiry.'
+    }
+    foreach ($phase75Action in @($phase75Statement.Action)) {
+        if ($phase75Action -notin $phase75FirewallSetupActions) { throw 'Unexpected firewall setup action.' }
+    }
+    foreach ($phase75Resource in @($phase75Statement.Resource)) {
+        if ($phase75Statement.Action -eq 'network-firewall:ListRuleGroups') {
+            if ($phase75Resource -ne '*') { throw 'ListRuleGroups requires the documented unscoped exception.' }
+        } elseif ($phase75Resource -notin @(
+            "arn:aws:network-firewall:ap-northeast-1:${phase75Account}:firewall-policy/terraform-aws-security-baseline-dev-phase75-policy",
+            "arn:aws:network-firewall:ap-northeast-1:${phase75Account}:stateful-rulegroup/terraform-aws-security-baseline-dev-phase75-http-rule"
+        )) { throw 'Unexpected firewall setup resource.' }
+    }
+    if ($phase75Statement.Action -in @('network-firewall:CreateFirewallPolicy', 'network-firewall:TagResource') -and
+        ($phase75Statement.Condition.StringEquals.'aws:RequestTag/Purpose' -ne 'phase75-firewall-test' -or
+         @($phase75Statement.Condition.'ForAllValues:StringEquals'.'aws:TagKeys').Count -ne 5)) {
+        throw 'Missing firewall setup creation tags.'
+    }
+}
+$phase75FirewallSetupDenyOther = @($phase75FirewallSetup.Statement | Where-Object Sid -eq 'DenyEveryOtherOperation')
+$phase75FirewallSetupDenyRegion = @($phase75FirewallSetup.Statement | Where-Object Sid -eq 'DenyOutsideTokyo')
+$phase75FirewallSetupDenyExpiry = @($phase75FirewallSetup.Statement | Where-Object Sid -eq 'DenyAfterExpiryIncludingExistingSessions')
+if ($phase75FirewallSetupDenyOther.Count -ne 1 -or $phase75FirewallSetupDenyOther[0].Effect -ne 'Deny' -or
+    $phase75FirewallSetupDenyOther[0].Resource -ne '*' -or $phase75FirewallSetupDenyOther[0].Condition -or
+    @($phase75FirewallSetupDenyOther[0].NotAction).Count -ne 5 -or
+    @($phase75FirewallSetupDenyOther[0].NotAction | Where-Object { $_ -notin $phase75FirewallSetupActions }).Count -ne 0 -or
+    $phase75FirewallSetupDenyRegion.Count -ne 1 -or $phase75FirewallSetupDenyRegion[0].Effect -ne 'Deny' -or
+    $phase75FirewallSetupDenyRegion[0].Action -ne '*' -or $phase75FirewallSetupDenyRegion[0].Resource -ne '*' -or
+    $phase75FirewallSetupDenyRegion[0].Condition.StringNotEquals.'aws:RequestedRegion' -ne 'ap-northeast-1' -or
+    $phase75FirewallSetupDenyExpiry.Count -ne 1 -or $phase75FirewallSetupDenyExpiry[0].Effect -ne 'Deny' -or
+    $phase75FirewallSetupDenyExpiry[0].Action -ne '*' -or $phase75FirewallSetupDenyExpiry[0].Resource -ne '*' -or
+    [DateTimeOffset]$phase75FirewallSetupDenyExpiry[0].Condition.DateGreaterThanEquals.'aws:CurrentTime' -ne [DateTimeOffset]$phase75Substitutions['<SETUP_EXPIRY_UTC>']) {
+    throw 'Unexpected firewall setup deny guardrails.'
+}
+if ('network-firewall:ListRuleGroups' -in $phase75BoundaryAllows) { throw 'Do not grant rule metadata listing to the Lab boundary.' }
 $phase75Results
 Write-Output 'PASS: JSON, conservative rendered sizes, and Boundary action coverage.'
 Write-Output 'PASS: delivery policies restrict service principal, destinations, write actions, source account and Region.'
 Write-Output 'PASS: setup trust requires MFA; setup permissions restrict operations, Region and absolute expiry.'
+Write-Output 'PASS: firewall policy setup has named write/read resources, one temporary listing exception, MFA and expiry; Lab boundary does not allow listing.'
 Write-Output 'This is not IAM simulation: resource/condition compatibility, AWS validation, and API tests remain required.'

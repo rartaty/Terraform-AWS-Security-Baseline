@@ -1,0 +1,93 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "CreateOnlyNamedLabPolicyWithTags",
+      "Effect": "Allow",
+      "Action": "network-firewall:CreateFirewallPolicy",
+      "Resource": [
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:firewall-policy/terraform-aws-security-baseline-dev-phase75-policy",
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:stateful-rulegroup/terraform-aws-security-baseline-dev-phase75-http-rule"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-1",
+          "aws:RequestTag/Project": "terraform-aws-security-baseline",
+          "aws:RequestTag/Environment": "dev",
+          "aws:RequestTag/ManagedBy": "Terraform",
+          "aws:RequestTag/Purpose": "phase75-firewall-test"
+        },
+        "ForAllValues:StringEquals": {
+          "aws:TagKeys": ["Project", "Environment", "ManagedBy", "Purpose", "Name"]
+        },
+        "DateLessThan": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" }
+      }
+    },
+    {
+      "Sid": "TagOnlyNamedLabPolicyDuringSetup",
+      "Effect": "Allow",
+      "Action": "network-firewall:TagResource",
+      "Resource": "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:firewall-policy/terraform-aws-security-baseline-dev-phase75-policy",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "ap-northeast-1",
+          "aws:RequestTag/Project": "terraform-aws-security-baseline",
+          "aws:RequestTag/Environment": "dev",
+          "aws:RequestTag/ManagedBy": "Terraform",
+          "aws:RequestTag/Purpose": "phase75-firewall-test"
+        },
+        "ForAllValues:StringEquals": {
+          "aws:TagKeys": ["Project", "Environment", "ManagedBy", "Purpose", "Name"]
+        },
+        "DateLessThan": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" }
+      }
+    },
+    {
+      "Sid": "InspectOnlyNamedLabPolicyAndRule",
+      "Effect": "Allow",
+      "Action": ["network-firewall:DescribeFirewallPolicy", "network-firewall:DescribeRuleGroup"],
+      "Resource": [
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:firewall-policy/terraform-aws-security-baseline-dev-phase75-policy",
+        "arn:aws:network-firewall:ap-northeast-1:<ACCOUNT_ID>:stateful-rulegroup/terraform-aws-security-baseline-dev-phase75-http-rule"
+      ],
+      "Condition": {
+        "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" },
+        "DateLessThan": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" }
+      }
+    },
+    {
+      "Sid": "AllowTemporaryRuleMetadataListingInTokyo",
+      "Effect": "Allow",
+      "Action": "network-firewall:ListRuleGroups",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" },
+        "DateLessThan": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" }
+      }
+    },
+    {
+      "Sid": "DenyEveryOtherOperation",
+      "Effect": "Deny",
+      "NotAction": [
+        "network-firewall:CreateFirewallPolicy", "network-firewall:TagResource",
+        "network-firewall:DescribeFirewallPolicy", "network-firewall:DescribeRuleGroup",
+        "network-firewall:ListRuleGroups"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyOutsideTokyo",
+      "Effect": "Deny",
+      "Action": "*",
+      "Resource": "*",
+      "Condition": { "StringNotEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
+    },
+    {
+      "Sid": "DenyAfterExpiryIncludingExistingSessions",
+      "Effect": "Deny",
+      "Action": "*",
+      "Resource": "*",
+      "Condition": { "DateGreaterThanEquals": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" } }
+    }
+  ]
+}
