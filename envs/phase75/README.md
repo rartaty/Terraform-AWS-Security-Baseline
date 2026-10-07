@@ -94,6 +94,20 @@ terraform -chdir=envs/phase75 plan "-var-file=$($phase75Inputs.TfvarsPath)" -var
 Timeoutだけで合格にしない。IP・Port・UTC時刻・signature/actionを含む原本は非公開保存する。
 DROP後のplanでは`-var=rule_action=drop`を維持するか、非公開tfvarsのrule_actionをdropへ更新して、意図しないALERT復帰を防ぐ。
 
+## 非公開の証跡保存
+
+`scripts/Export-Phase75Evidence.ps1`へ確認済みClient/Server IDと作成開始時刻を渡す。
+専用Lab Roleと各instanceのPurposeタグ・固定Private IPを確認した後、構成・ルール・配送設定、
+両console、開始時刻以後のALERT/FLOWイベントをCLIの自動paginationで取得し、
+リポジトリ外の一意な一時フォルダーへJSONとSHA-256 manifestを保存する。
+AWSの書込みAPI・Terraform・IAM変更は行わない。証跡保存で撤去期限を延長しない。
+途中エラーは取得済み証跡を残し、manifestのComplete=falseとエラーで未完了を示す。
+
+consoleが以前の全cycleを保持する保証はなく、ログ配送中の読取りはatomic snapshotでもない。
+保存完了は通信試験の自動合格を意味しない。SHA-256は保存後の改変検知用であり、
+AWS原本の真正性を証明する署名ではない。生の識別子・ログ・consoleはGitへ追加しない。
+一時保存先から学習記録へ保管する際も公開対象から除外し、元の証跡を上書きしない。
+
 ## 撤去
 
 証跡回収の成否にかかわらず期限を守る。Lab stateの所有範囲を再確認する。
