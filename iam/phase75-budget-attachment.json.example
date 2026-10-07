@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AttachOrDetachOnlyPhase75BudgetDeny",
+      "Effect": "Allow",
+      "Action": ["iam:AttachRolePolicy", "iam:DetachRolePolicy"],
+      "Resource": "arn:aws:iam::<ACCOUNT_ID>:role/Phase75LabExecutionRole",
+      "Condition": {
+        "ArnEquals": {
+          "iam:PolicyARN": "arn:aws:iam::<ACCOUNT_ID>:policy/DenyPhase75ProvisioningAtBudgetLimit"
+        }
+      }
+    }
+  ]
+}
