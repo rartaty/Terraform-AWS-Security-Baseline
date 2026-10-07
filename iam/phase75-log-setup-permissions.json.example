@@ -1,0 +1,35 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowOnlyTemporaryPolicySetupInTokyo",
+      "Effect": "Allow",
+      "Action": ["logs:DescribeResourcePolicies", "logs:PutResourcePolicy", "logs:DeleteResourcePolicy"],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" },
+        "DateLessThan": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" }
+      }
+    },
+    {
+      "Sid": "DenyEveryOtherOperation",
+      "Effect": "Deny",
+      "NotAction": ["logs:DescribeResourcePolicies", "logs:PutResourcePolicy", "logs:DeleteResourcePolicy"],
+      "Resource": "*"
+    },
+    {
+      "Sid": "DenyOutsideTokyo",
+      "Effect": "Deny",
+      "Action": "*",
+      "Resource": "*",
+      "Condition": { "StringNotEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
+    },
+    {
+      "Sid": "DenyAfterExpiryIncludingExistingSessions",
+      "Effect": "Deny",
+      "Action": "*",
+      "Resource": "*",
+      "Condition": { "DateGreaterThanEquals": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" } }
+    }
+  ]
+}
