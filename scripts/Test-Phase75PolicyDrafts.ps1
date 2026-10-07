@@ -176,9 +176,29 @@ if ($phase75FirewallSetupDenyOther.Count -ne 1 -or $phase75FirewallSetupDenyOthe
     throw 'Unexpected firewall setup deny guardrails.'
 }
 if ('network-firewall:ListRuleGroups' -in $phase75BoundaryAllows) { throw 'Do not grant rule metadata listing to the Lab boundary.' }
+$phase75Network = $phase75Policies['phase75-network-permissions.fragment.json.example']
+$phase75TagReads = @($phase75Network.Statement | Where-Object { $_.Effect -eq 'Allow' -and 'ec2:DescribeTags' -in @($_.Action) })
+if ($phase75TagReads.Count -ne 1 -or $phase75TagReads[0].Resource -ne '*' -or
+    $phase75TagReads[0].Condition.StringEquals.'aws:RequestedRegion' -ne 'ap-northeast-1' -or
+    'ec2:DescribeTags' -notin $phase75BoundaryAllows) {
+    throw 'Provider tag reads require one Tokyo-only network Allow and matching Boundary coverage.'
+}
+$phase75BoundaryRegionDeny = @($phase75Boundary.Statement | Where-Object {
+    $_.Effect -eq 'Deny' -and 'ec2:*' -in @($_.Action) -and $_.Resource -eq '*' -and
+    $_.Condition.StringNotEquals.'aws:RequestedRegion' -eq 'ap-northeast-1'
+})
+if ($phase75BoundaryRegionDeny.Count -ne 1) { throw 'Missing Tokyo boundary guardrail for EC2 reads.' }
+$phase75FirewallAllows = @($phase75Policies['phase75-firewall-permissions.fragment.json.example'].Statement |
+    Where-Object Effect -eq 'Allow' | ForEach-Object { $_.Action })
+foreach ($phase75SetupOnlyAction in @('network-firewall:CreateFirewallPolicy', 'network-firewall:ListRuleGroups')) {
+    if ($phase75SetupOnlyAction -in $phase75FirewallAllows -or $phase75SetupOnlyAction -in $phase75BoundaryAllows) {
+        throw "Keep policy creation dependencies in the temporary setup path: $phase75SetupOnlyAction"
+    }
+}
 $phase75Results
 Write-Output 'PASS: JSON, conservative rendered sizes, and Boundary action coverage.'
 Write-Output 'PASS: delivery policies restrict service principal, destinations, write actions, source account and Region.'
 Write-Output 'PASS: setup trust requires MFA; setup permissions restrict operations, Region and absolute expiry.'
 Write-Output 'PASS: firewall policy setup has named write/read resources, one temporary listing exception, MFA and expiry; Lab boundary does not allow listing.'
+Write-Output 'PASS: Tokyo provider tag reads are covered; Lab permissions and Boundary exclude policy creation and listing.'
 Write-Output 'This is not IAM simulation: resource/condition compatibility, AWS validation, and API tests remain required.'

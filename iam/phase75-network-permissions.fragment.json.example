@@ -77,7 +77,8 @@
         "ec2:DescribeRouteTables", "ec2:DescribeSecurityGroups", "ec2:DescribeSecurityGroupRules",
         "ec2:DescribeImages", "ec2:DescribeInstances", "ec2:DescribeInstanceAttribute",
         "ec2:DescribeInstanceCreditSpecifications", "ec2:DescribeInstanceTypes", "ec2:DescribeVolumes",
-        "ec2:DescribeNetworkInterfaces", "ec2:DescribeVpcEndpoints", "ec2:DescribeNetworkAcls"
+        "ec2:DescribeNetworkInterfaces", "ec2:DescribeVpcEndpoints", "ec2:DescribeNetworkAcls",
+        "ec2:DescribeTags"
       ],
       "Resource": "*",
       "Condition": { "StringEquals": { "aws:RequestedRegion": "ap-northeast-1" } }
