@@ -20,7 +20,7 @@
 |---|---|---|
 | Phase 7のNetwork Baseline | 実装・主要検証済み | 静的要件と保存証跡の対応付けを完了する。第7.4節参照 |
 | Phase 7のACCEPT／REJECT試験 | HTTP応答・受信側ENIのACCEPT／REJECT照合、一時resource撤去済み。手動IAMの整理結果と確認範囲は第5.1節へ記録済み | 試験の再作成は不要。IAMの未確認範囲は第4節と区別して管理する |
-| Phase 7.5のAWS Network Firewall | Optional・未設計 | Phase 7完了後、別ADR、1 AZ、事前費用承認、`ALERT`→`DROP`、同日destroyを条件に実施判断する |
+| Phase 7.5のAWS Network Firewall | ADR 0011に設計案あり。専用Role・Boundaryへの分離方針を確認。実装・作成・全体費用承認は未実施 | 専用IAM・backend・Budget抑止・ログ配送・撤去条件を検証し、東京の合計見積りを事前承認する。1 AZ、`ALERT`→`DROP`、同日destroyを条件とする。P7の残確認とは区別する |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
 
