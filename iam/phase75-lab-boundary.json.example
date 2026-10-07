@@ -15,7 +15,7 @@
     {
       "Effect": "Allow",
       "Action": [
-        "network-firewall:CreateFirewall", "network-firewall:CreateFirewallPolicy", "network-firewall:CreateRuleGroup",
+        "network-firewall:CreateFirewall", "network-firewall:CreateRuleGroup",
         "network-firewall:TagResource", "network-firewall:DescribeFirewall", "network-firewall:DescribeLoggingConfiguration",
         "network-firewall:UpdateLoggingConfiguration", "network-firewall:DeleteFirewall", "network-firewall:AssociateFirewallPolicy",
         "network-firewall:DescribeFirewallPolicy", "network-firewall:DeleteFirewallPolicy", "network-firewall:DescribeRuleGroup",
@@ -34,7 +34,7 @@
         "ec2:DescribeRouteTables", "ec2:DescribeSecurityGroups", "ec2:DescribeSecurityGroupRules",
         "ec2:DescribeImages", "ec2:DescribeInstances", "ec2:DescribeInstanceAttribute",
         "ec2:DescribeInstanceCreditSpecifications", "ec2:DescribeInstanceTypes", "ec2:DescribeVolumes",
-        "ec2:DescribeNetworkInterfaces", "ec2:DescribeVpcEndpoints", "ec2:DescribeNetworkAcls",
+        "ec2:DescribeNetworkInterfaces", "ec2:DescribeVpcEndpoints", "ec2:DescribeNetworkAcls", "ec2:DescribeTags",
         "logs:DescribeLogGroups", "logs:DescribeResourcePolicies", "logs:CreateLogDelivery", "logs:GetLogDelivery", "logs:UpdateLogDelivery", "logs:DeleteLogDelivery", "logs:ListLogDeliveries"
       ],
       "Resource": "*"

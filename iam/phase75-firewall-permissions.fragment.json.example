@@ -6,7 +6,6 @@
       "Effect": "Allow",
       "Action": [
         "network-firewall:CreateFirewall",
-        "network-firewall:CreateFirewallPolicy",
         "network-firewall:CreateRuleGroup",
         "network-firewall:TagResource"
       ],

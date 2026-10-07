@@ -23,6 +23,13 @@ Firewall/EC2作成前に全体費用と撤去期限の承認を取る。
 state keyは`labs/phase75/terraform.tfstate`、default workspaceだけを使用する。
 dev stateの読取りやIAM管理はLab Roleの権限へ加えない。
 
+AWS ProviderはEC2作成後にlaunch template IDのtagを読むため、`ec2:DescribeTags`も必要。
+Network許可の東京限定Describe StatementとBoundaryの両方へ含める。Launch Templateの
+作成権限を追加する理由ではない。DescribeTagsはresource-level permission非対応のため
+Resourceは`*`となり、東京内のLab以外のtag metadataも参照できる例外が残る。
+CLIのfilterは取得結果を絞るが、IAMの権限上限ではない。
+草案の更新だけでAWSの実policyが更新済みとは扱わず、再生成・AWS validation・実本文照合を行う。
+
 `scripts/New-Phase75LabInputs.ps1`は実識別子からbackend.hclとterraform.tfvarsを
 リポジトリ外の一時フォルダーへ生成する。識別子・入力ファイル・plan JSON・証跡をGitへ追加しない。
 非公開ファイルは試験終了まで維持し、消失した場合は同じ入力で再生成する。
@@ -38,14 +45,32 @@ terraform -chdir=envs/phase75 workspace show
 ```
 
 workspaceがdefaultでなければ停止する。既存stateがある場合は、その所有範囲を確認してから進む。
+
+Firewall Policyは一時設定Roleで初期作成し、このLab stateへimportする。
+Lab Roleの通常許可とBoundaryにはCreateFirewallPolicy/ListRuleGroupsを含めない。
+Rule Groupだけのtarget plan/apply、一時設定Roleでのdry-runと実作成、Policyのimport、
+全体planでPolicy差分なしの確認、一時Role撤去の順で進める。入力は
+`scripts/New-Phase75FirewallPolicyInput.ps1`で非公開生成し、Rule Group・Policyの固定名ARN、
+STRICT_ORDER・priority・default actions・タグをコードと照合する。
+targetは初期引継ぎの例外であり、通常の全体planの代用にはしない。
+ALERT/DROPはUpdateRuleGroupだけで行い、Policyの変更/再作成が必要なら設定経路へ戻る。
+
 手動作成済みLog Group 2個をこのstateへimportする。まだFirewall/EC2は作成しない。
-PowerShellからのindex付きaddressの引用方法には注意する。
+Windows PowerShellからのindex付きaddressは、内部の二重引用符もescapeする。
 
 ```powershell
-terraform -chdir=envs/phase75 import "-var-file=$($phase75Inputs.TfvarsPath)" 'aws_cloudwatch_log_group.lab["alert"]' /aws/vendedlogs/network-firewall/phase75-alert
-terraform -chdir=envs/phase75 import "-var-file=$($phase75Inputs.TfvarsPath)" 'aws_cloudwatch_log_group.lab["flow"]' /aws/vendedlogs/network-firewall/phase75-flow
+terraform -chdir=envs/phase75 import "-var-file=$($phase75Inputs.TfvarsPath)" 'aws_cloudwatch_log_group.lab[\"alert\"]' /aws/vendedlogs/network-firewall/phase75-alert
+terraform -chdir=envs/phase75 import "-var-file=$($phase75Inputs.TfvarsPath)" 'aws_cloudwatch_log_group.lab[\"flow\"]' /aws/vendedlogs/network-firewall/phase75-flow
 terraform -chdir=envs/phase75 plan "-var-file=$($phase75Inputs.TfvarsPath)"
 ```
+
+2026-10-08の実行ではtag付きCreateLogGroupがAccessDeniedとなった一方、CLIでtagなし
+STANDARD作成→import→Terraformの対象Log Groupだけの更新は成功した。
+この経路を使う場合も既存同名Groupを再取得し、重複作成を避ける。更新planが保持1日と
+Labタグだけであることを確認し、保持期間未設定のまま放置しない。正確な拒否原因は未確定で、
+成功した回避手順を理由にlogs:*等へ権限を広げない。
+配送resource policyは別の短期限Roleで事前設定し、ACCOUNT/RESOURCE scopeの既存内容と
+設定後の両本文を照合する。Role撤去と実配送の成功は別の確認である。
 
 初回planはLab新規resourceとimport済みLog Groupのtag等だけが対象であることを確認する。
 既存P7 VPC/Subnet/Route、IAM、Budget、NAT/EIP、追加customer KMS keyを変更しない。
@@ -82,6 +107,13 @@ Firewall/Endpoint、EC2/EBS/ENI、SG、Subnet、Route Table、Rule Group/Policy�
 APIで再取得して残存確認する。Log Group削除前に必要な証跡を取得する。
 ログ配送resource policyの残存と撤去は保護された管理経路で確認する。
 Lab用IAM・Budget Actionの撤去は別の変更であり、Baseline用の権限やActionを削除しない。
+
+EC2作成後のreadエラーでもEC2が稼働している場合がある。再applyせず、state一覧とAWSの
+Labタグ・ID・状態を照合する。必要なら既存の限定TerminateInstancesで確認済みLab EC2を終了する。
+DescribeTags不足でdestroyのrefreshも止まる場合、`-refresh=false`は古いstateを使う例外となる。
+stateの全対象と実AWSの所有範囲・依存関係を照合し、保存したdestroy planを確認してから判断する。
+state外の作成物も別途撤去する。stateを消すことやtarget planのNo changesを撤去証明にしない。
+失敗/別操作後のsaved planは再利用せず、同時Terraform操作を止めて再planする。
 
 ## 静的・mock検証
 
