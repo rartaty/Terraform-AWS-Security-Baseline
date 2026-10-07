@@ -48,7 +48,7 @@ S3 lockfileによる同時更新防止を適用する。
 
 ### A-03: Terraformコードと設計文書
 
-Terraformコード、変数定義、Provider・backend設定、ADRおよび各設計文書を、
+Terraformコード、変数定義、Provider・backend設定、各設計文書を、
 AWS環境を再現し、変更理由を確認するための保護対象とする。
 
 これらが意図せず変更されると、過剰なIAM permission、S3の公開、
@@ -373,7 +373,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | シナリオ | 認証情報を取得した第三者または誤操作により、CloudTrailの記録が停止される、ログ保存先や転送設定が変更される、または保存済みログが削除・改ざんされる |
 | 影響 | 誰が、いつ、どのAWS APIを実行したか確認できず、security incidentの発生範囲・原因・影響を調査できなくなる |
 | 既存control | IAM userとTerraformExecutionRoleの分離、TerraformコードとGitによる設定変更履歴、multi-region CloudTrailによるmanagement events記録、専用S3 bucket、公開防止、HTTPS必須、versioning、30日保持、Log File Validation、customer managed KMS key、CloudTrailLogReadRoleによる限定閲覧 |
-| 実装反映・追加予定control | AWS Configによる選択resourceの構成変更記録とCloudTrail用S3のHTTPS必須化は実装・検証済み。CloudWatch Logs転送はADR 0005で見送り、必要時に再判断する |
+| 実装反映・追加予定control | AWS Configによる選択resourceの構成変更記録とCloudTrail用S3のHTTPS必須化は実装・検証済み。CloudWatch Logs転送は検索・監視要件と追加費用を踏まえ見送り、必要時に再判断する |
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
@@ -474,7 +474,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | C-03 | 非公開・暗号化・versioning・HTTPS必須・lockfileを備えたS3 backend | TH-02、TH-07 | 実装済み | Phase 1 |
 | C-04 | `.gitignore`、example変数、commit前差分確認、secret非保存 | TH-03、TH-06 | 一部実装・自動scan未実装 | Phase 0、8 |
 | C-05 | アカウントレベルS3 Block Public Access、CloudTrail・Config共有customer managed KMS key（rotation、30日削除待機、`prevent_destroy`） | TH-07、TH-08 | 実装済み（alias不採用、通常Roleの破壊的権限縮小も適用・確認済み） | Phase 3〜6 |
-| C-06 | multi-region CloudTrail、management events、専用S3、HTTPS必須、SSE-KMS、30日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装・検証済み（CloudWatch Logs転送はADR 0005で見送り） | Phase 4 |
+| C-06 | multi-region CloudTrail、management events、専用S3、HTTPS必須、SSE-KMS、30日保持、log file validation、閲覧専用Role | TH-01、TH-04、TH-05、TH-06 | 実装・検証済み（CloudWatch Logs転送は検索・監視要件と追加費用を踏まえ見送り） | Phase 4 |
 | C-07 | GuardDuty Foundational Threat Detectionによる不審な操作・認証情報利用の検知。対象外のProtection Planは明示的に無効化 | TH-01、TH-09 | 実装済み | Phase 5 |
 | C-08 | IAM Access Analyzerのexternal access analyzer、Security Hub Essentials・CSPM・AWS Foundational Security Best Practicesによる外部公開・設定不備の検知 | TH-04、TH-07、TH-10 | 実装済み（Automation Rules・自動修復・有料addonは未採用） | Phase 5 |
 | C-09 | AWS Configによる17 resource typeの継続記録、専用S3へのSSE-KMS暗号化保存、Terraformで明示管理する10個のManaged Rulesによる24時間ごとまたは設定変更時の準拠評価（Security Hub管理Ruleは別） | TH-04、TH-05、TH-07、TH-10 | 実装済み | Phase 6〜7 |
