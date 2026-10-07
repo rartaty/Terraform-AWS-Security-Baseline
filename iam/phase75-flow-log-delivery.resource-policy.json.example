@@ -1,0 +1,16 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowSameAccountDeliveryToLabFlowLogs",
+      "Effect": "Allow",
+      "Principal": { "Service": "delivery.logs.amazonaws.com" },
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:log-group:/aws/vendedlogs/network-firewall/phase75-flow:log-stream:*",
+      "Condition": {
+        "StringEquals": { "aws:SourceAccount": "<ACCOUNT_ID>" },
+        "ArnLike": { "aws:SourceArn": "arn:aws:logs:ap-northeast-1:<ACCOUNT_ID>:*" }
+      }
+    }
+  ]
+}

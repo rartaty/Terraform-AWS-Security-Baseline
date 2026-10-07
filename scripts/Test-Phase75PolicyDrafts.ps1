@@ -58,6 +58,27 @@ foreach ($phase75Name in $phase75Policies.Keys | Where-Object { $_ -like '*permi
         }
     }
 }
+foreach ($phase75Type in @('alert', 'flow')) {
+    $phase75Delivery = $phase75Policies["phase75-$phase75Type-log-delivery.resource-policy.json.example"]
+    if (!$phase75Delivery -or @($phase75Delivery.Statement).Count -ne 1) {
+        throw "Expected one delivery statement: $phase75Type"
+    }
+    $phase75DeliveryStatement = $phase75Delivery.Statement[0]
+    $phase75ExpectedDestination = "arn:aws:logs:ap-northeast-1:${phase75Account}:log-group:/aws/vendedlogs/network-firewall/phase75-${phase75Type}:log-stream:*"
+    if ($phase75DeliveryStatement.Effect -ne 'Allow' -or
+        $phase75DeliveryStatement.Principal.Service -ne 'delivery.logs.amazonaws.com' -or
+        @($phase75DeliveryStatement.Principal.PSObject.Properties).Count -ne 1 -or
+        @($phase75DeliveryStatement.Resource).Count -ne 1 -or
+        $phase75DeliveryStatement.Resource -ne $phase75ExpectedDestination -or
+        @($phase75DeliveryStatement.Action).Count -ne 2 -or
+        'logs:CreateLogStream' -notin $phase75DeliveryStatement.Action -or
+        'logs:PutLogEvents' -notin $phase75DeliveryStatement.Action -or
+        $phase75DeliveryStatement.Condition.StringEquals.'aws:SourceAccount' -ne $phase75Account -or
+        $phase75DeliveryStatement.Condition.ArnLike.'aws:SourceArn' -ne "arn:aws:logs:ap-northeast-1:${phase75Account}:*") {
+        throw "Unexpected delivery principal, destination, actions or source conditions: $phase75Type"
+    }
+}
 $phase75Results
 Write-Output 'PASS: JSON, conservative rendered sizes, and Boundary action coverage.'
+Write-Output 'PASS: delivery policies restrict service principal, destinations, write actions, source account and Region.'
 Write-Output 'This is not IAM simulation: resource/condition compatibility, AWS validation, and API tests remain required.'
