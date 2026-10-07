@@ -1,8 +1,22 @@
 # Phase 7.5: Private HTTP Network Firewall Lab
 
 別root・別stateで既存P7 VPCを参照する短期Lab。
-設計・停止条件は[ADR 0011](../../docs/decisions/0011-test-network-firewall-with-private-http-traffic.md)を参照する。
+検証目的・確認範囲と停止条件は以下に記載する。
 コード実装・mockテストと、実AWSの認可・通信・ログ配送は別の確認である。
+
+## 検証目的と結果
+
+SGで許可した同じHTTP portの通信を、URI条件で検知・遮断する。
+既存Baselineへの影響と常設費用を抑えるため、1 AZ・別stateの短期Labとし、
+初期設定専用の権限は通常Lab Roleから分離する。
+
+2026-10-08に、ALERTでは試験URIのHTTP 200とallowed／alert、DROPではTimeoutと
+blocked／dropを同一接続で照合した。前後の通常URIはHTTP 200を維持した。
+TLS inspection・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外。
+
+Lab主要resource 23個をdestroyし、指定名・Labタグ・Private IP範囲で不在を確認した。
+IAM・Budget Action・backendの整理、配送policyの追加の残存確認、証跡の恒久保管と
+費用反映後の確認は残る。account全体の残存ゼロやBaseline全体の課金停止を意味しない。
 
 ## 構成
 
