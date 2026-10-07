@@ -2,7 +2,7 @@
 
 - 同期日: 2026-09-28（IAM整理・MFA検証・一時権限撤去結果を反映。個別試験日は各行を参照）
 - 対象: dev環境、Phase 3〜7の構成・試験状況
-- 根拠: Terraformコード、ADR、実行結果、非公開作業記録
+- 根拠: Terraformコード、設計文書、実行結果、非公開作業記録
 - 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は過去の共有結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
 
 ## 1. 状態の定義
@@ -20,14 +20,14 @@
 |---|---|---|
 | Phase 7のNetwork Baseline | 実装・主要検証済み | 静的要件と保存証跡の対応付けを完了する。第7.4節参照 |
 | Phase 7のACCEPT／REJECT試験 | HTTP応答・受信側ENIのACCEPT／REJECT照合、一時resource撤去済み。手動IAMの整理結果と確認範囲は第5.1節へ記録済み | 試験の再作成は不要。IAMの未確認範囲は第4節と区別して管理する |
-| Phase 7.5のAWS Network Firewall | Optional・未設計 | Phase 7完了後、別ADR、1 AZ、事前費用承認、`ALERT`→`DROP`、同日destroyを条件に実施判断する |
+| Phase 7.5のAWS Network Firewall | Optional・未設計 | Phase 7完了後、別構成、1 AZ、事前費用承認、`ALERT`→`DROP`、同日destroyを条件に実施判断する |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
 
 | 項目 | 状態 | 次の判断 |
 |---|---|---|
-| KMS alias | 2026-09-11に不採用を決定 | CloudTrail・Configは固定したkey ARNを直接参照する。ADR 0009を参照 |
-| CloudWatch Logs転送 | ADR 0005で見送り済み | 今回の完了条件から除外。再採用する場合だけ目的・料金・監視要件を再判断する |
+| KMS alias | 2026-09-11に不採用を決定 | CloudTrail・Configは固定したkey ARNを直接参照する。参照経路を単純化する |
+| CloudWatch Logs転送 | 検索・監視要件と追加費用を踏まえ見送り済み | 今回の完了条件から除外。再採用する場合だけ目的・料金・監視要件を再判断する |
 | KMS残存riskと復旧手順 | 破壊的権限縮小を適用し、残存riskを中へ再評価 | 稼働中keyを用いた破壊的復旧試験は行わず、Phase 8で手順確認の範囲を判断する |
 
 ## 4. 未検証・未観測の事項
@@ -92,7 +92,7 @@ No changesは通常planの参照処理を確認した結果であり、将来の
 
 - 公開文書には設計・確認方法・匿名化した状態を記載する。
 - 個別実行結果はGit対象外のPhase別作業記録に集約し、アカウントID・実ARN・認証情報・object本文は公開しない。
-- Phase 6は主要動作確認済みだが、ADR 0008の完了条件をすべて満たしたとは扱わない。
+- Phase 6は主要動作確認済みだが、Phase 6の完了条件をすべて満たしたとは扱わない。
 - Phase 8の統合試験・復旧・後片付けは別途計画する。この文書は全Phaseの試験仕様が完成したことを意味しない。
 
 ## 7. Phase 7の試験仕様
@@ -188,20 +188,20 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 - 2026-09-28: IAM整理、主要policyのCLI取得結果、MFA条件付き新規AssumeRole成功、No changes、一時Role・監査権限の削除報告を反映。MFAなし拒否試験・最終Trust全文再取得・全policy本文のCLI再取得・削除後のAPI確認は未実施として区別。今回の作業は文書更新のみ。
 
-- 2026-09-23: P7の未実装・未実施表記を構築／通信試験／Config原本照合／一時resource撤去の実績へ同期。手動IAM縮小は確認とし、実体再取得・静的証跡整理・確定費用を残確認として維持。通常planはNo changes。新規ADR・AWS変更・pushなし。
+- 2026-09-23: P7の未実装・未実施表記を構築／通信試験／Config原本照合／一時resource撤去の実績へ同期。手動IAM縮小は確認とし、実体再取得・静的証跡整理・確定費用を残確認として維持。通常planはNo changes。AWS変更・pushなし。
 
 - 2026-09-17: Phase 7の設計に、resourceごとの作成理由、課金、dependency、destroy前提、削除後確認を追加。Terraformのdependency graphだけではS3全versionや遅延ENIを自動解決できないことを明記。AWS resourceの作成・削除は未実施。
 
-- 2026-09-17: VPC CIDR・利用可能AZと合意を根拠に、ADR 0010のAddress Planと1a／1c配置を確定。照合範囲は提示された東京Regionの結果に限定。AWS resource作成・通信試験は未実施。
+- 2026-09-17: VPC CIDR・利用可能AZと合意を根拠に、Address Planと1a／1c配置を確定。照合範囲は提示された東京Regionの結果に限定。AWS resource作成・通信試験は未実施。
 
 - 2026-09-12: 構成設計のPhase 8に残っていた保持・残存費用の旧表現を同期。一時保持は削除順序上の都合に限定し、完全削除と継続課金停止を完了条件に統一した。文書のみの変更。
 
 - 2026-09-12: 費用・保存期間の誤解を補正。Phase 7の通信学習とConfig監査を分離し、暫定待機期限と失敗時Cleanup、学習完了後の完全削除・継続課金停止確認を追加。AWS設定は変更していない。
 
-- 2026-09-12: Phase 7の2 AZ Network Baseline、Public／Isolated Subnet、Flow Logs専用S3、Config連携、および一時EC2-A／BによるACCEPT／REJECT試験を合意済み設計として追加。Phase 7.5のAWS Network Firewallは常設せず、別ADR・1 AZ・事前費用承認・同日destroyを条件とするOptional Labへ分離した。
+- 2026-09-12: Phase 7の2 AZ Network Baseline、Public／Isolated Subnet、Flow Logs専用S3、Config連携、および一時EC2-A／BによるACCEPT／REJECT試験を合意済み設計として追加。Phase 7.5のAWS Network Firewallは常設せず、別構成・1 AZ・事前費用承認・同日destroyを条件とするOptional Labへ分離した。
 - 2026-09-11: 文書整合性監査でdev planのNo changes、Recorder稼働、Snapshot/History配送成功、7 RuleのCOMPLIANTを再確認。Budget Actionの説明とSimulationの証明範囲を修正し、未実施の実API試験を残作業へ戻した。
 - 2026-09-11: KMS破壊的権限の縮小について、AWS適用、Key Policy確認、一時権限撤去、最終No changesを反映した。
 - 2026-09-11: CloudTrail用S3のHTTPS必須化を適用し、Terraform整合とログ配送継続の確認結果を反映した。
 - 2026-09-11: Phase 6のMFA条件とS3読取り専用境界をPolicy Simulatorでnegative testし、一時的なSimulation権限の撤去まで確認した。Role Trust Policy自体はSimulator非対応のため、MFA条件を同等のテストPolicyでfalse/true評価した。
 
-- 2026-09-10: コード・ADR・共有結果を照合し、追加実装、採否判断、未検証・未観測、記録不足を分類。AWS設定・Terraformコードの変更や試験実行は行っていない。
+- 2026-09-10: コード・設計・実行結果を照合し、追加実装、採否判断、未検証・未観測、記録不足を分類。AWS設定・Terraformコードの変更や試験実行は行っていない。

@@ -21,10 +21,10 @@ Phase 7はNetwork Baseline・Flow Logs・Config連携の構築、通信試験、
 | 1 | AWS認証・実行Role・S3 backend | 完了 |
 | 2 | コストガードレール（AWS Budgets） | 完了 |
 | 3 | 共通セキュリティ基盤（KMS・S3保護） | 完了。aliasは不採用。通常RoleからKMS keyの無効化・削除予約権限を除去し、AWS適用後のNo changesを確認済み |
-| 4 | 監査ログ（CloudTrail） | 完了。CloudTrail用S3のHTTPS必須化、配送継続、No changesを確認済み。CloudWatch Logs転送はADR 0005で見送り |
+| 4 | 監査ログ（CloudTrail） | 完了。CloudTrail用S3のHTTPS必須化、配送継続、No changesを確認済み。CloudWatch Logs転送は検索・監視要件と追加費用を踏まえ見送り |
 | 5 | セキュリティ検知（GuardDuty・Security Hub・Access Analyzer） | 完了 |
 | 6 | 構成・コンプライアンス管理（AWS Config） | Phase 6時点のRecorder・配送成功、既存7 RuleのCOMPLIANT、No changesを確認済み。S3権限・MFA条件はSimulation確認済み。実API試験の未実施範囲と費用観測は試験計画参照 |
-| 7 | ネットワーク検証（VPC・Flow Logs） | 主要構築・通信試験・ConfigのS3原本照合・一時リソース撤去は完了。暫定費用取得済み。静的証跡整理・手動権限確認・確定費用確認等が残る。設計は[ADR 0010](docs/decisions/0010-build-two-az-network-baseline-and-test-flow-logs.md)を参照 |
+| 7 | ネットワーク検証（VPC・Flow Logs） | 主要構築・通信試験・ConfigのS3原本照合・一時リソース撤去は完了。暫定費用取得済み。静的証跡整理・手動権限確認・確定費用確認等が残る。設計は[アーキテクチャ](docs/02_architecture.md)を参照 |
 | 7.5 | Optional IDS/IPS Lab（AWS Network Firewall） | Phase 7完了後に別途判断。常設せず、1 AZで短期検証して同日destroyする |
 | 8 | 統合試験・証跡・後片付け・文書化 | 未着手 |
 
