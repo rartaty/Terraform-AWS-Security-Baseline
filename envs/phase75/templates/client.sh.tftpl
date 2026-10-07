@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+exec > >(tee -a /var/log/phase75-client.log /dev/console) 2>&1
+/usr/bin/python3 -u - <<'PYTHON'
+import datetime
+import http.client
+import time
+
+target = "${server_ip}"
+deadline = time.monotonic() + 2100
+cycle = 0
+
+def log(message):
+    print(datetime.datetime.now(datetime.timezone.utc).isoformat(), message, flush=True)
+
+def request(path, label):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        return
+    conn = http.client.HTTPConnection(target, 8080, timeout=min(5, remaining))
+    source = "unknown"
+    try:
+        conn.connect()
+        source = str(conn.sock.getsockname())
+        conn.request("GET", path, headers={"Connection": "close"})
+        response = conn.getresponse()
+        body = response.read(128).decode("utf-8", errors="replace").strip()
+        ok = response.status == 200 and body == "phase75-server-ok"
+        log(f"HTTP_RESULT cycle={cycle} label={label} source={source} target={target}:8080 path={path} status={response.status} ok={ok}")
+    except Exception as error:
+        log(f"HTTP_FAILED cycle={cycle} label={label} source={source} target={target}:8080 path={path} error={type(error).__name__}:{error}")
+    finally:
+        conn.close()
+
+log("PHASE75_CLIENT_STARTED: finite requests; timeout alone is not proof of firewall blocking")
+while time.monotonic() < deadline:
+    cycle += 1
+    request("/health", "health-before")
+    request("/phase75-probe", "probe")
+    request("/health", "health-after")
+    remaining = deadline - time.monotonic()
+    if remaining > 0:
+        time.sleep(min(20, remaining))
+log("PHASE75_CLIENT_FINISHED: requests ended; EC2 billing continues until termination")
+PYTHON

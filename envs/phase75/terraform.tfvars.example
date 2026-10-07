@@ -1,0 +1,7 @@
+# Actual identifiers belong only in ignored terraform.tfvars, never in Git.
+account_id        = "<ACCOUNT_ID>"
+vpc_id            = "<VPC_ID>"
+availability_zone = "ap-northeast-1a"
+ami_id            = "<AMI_ID>"
+ebs_key_arn       = "<EBS_KEY_ARN>"
+rule_action       = "alert"
