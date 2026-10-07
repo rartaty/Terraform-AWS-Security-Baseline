@@ -3,15 +3,15 @@
 - 同期日: 2026-10-08（Phase 7.5の試験・主要resource撤去結果と公開文書の範囲を反映。個別試験日は各行を参照）
 - 対象: dev環境と短期Lab、Phase 3〜7.5の構成・試験状況
 - 根拠: Terraformコード、設計文書、実行結果、非公開の詳細記録
-- 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は過去の共有結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
+- 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は各試験時の実行結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
 
 ## 1. 状態の定義
 
-- 実装済み: Terraformに定義があり、apply結果が共有されている。
+- 実装済み: Terraformに定義があり、apply結果を確認した。
 - コード確認済み: 静的な設定を確認した。実際の拒否や配信成功を意味しない。
-- 結果共有済み: 実行結果を確認した。今回の再実行ではない。
+- 結果確認済み: 試験時の実行結果を確認した。記録更新時の再実行ではない。
 - Simulation確認済み: 指定したPolicy・Action・Resource・contextでの評価結果。実APIの拒否や、未入力のresource policyを含む全権限の証明ではない。
-- 記録不足: 結果は共有済みだが、文書への集約が不足している。
+- 記録不足: 結果は確認済みだが、文書への集約が不足している。
 - 未検証・未観測: 確認結果がない。記録追記だけで完了扱いにしない。
 
 ## 2. Phase 7以降の実装・試験状況
@@ -35,15 +35,15 @@
 | 項目 | 現在確認できること | 残作業 |
 |---|---|---|
 | Configuration Item数・Rule評価数・実料金 | 9月21〜22日（UTC）のアカウント全体の暫定費用を取得済み。P7単独の費用ではない | 確定費用とCI数・評価数の対応を確認し、費用設計の見積りを更新する |
-| MFA未認証での実AssumeRole拒否 | Phase 6の閲覧Roleに関する条件単体Simulationとは別に、2026-09-28にTerraform実行RoleへMFA条件を追加し、新規AssumeRole成功・No changesが共有された | MFAなしの実AssumeRole拒否は未試験。成功経路や過去のSimulationで代替しない。最終Trust Policy全文のCLI再取得も未実施 |
+| MFA未認証での実AssumeRole拒否 | Phase 6の閲覧Roleに関する条件単体Simulationとは別に、2026-09-28にTerraform実行RoleへMFA条件を追加し、新規AssumeRole成功・No changesを確認した | MFAなしの実AssumeRole拒否は未試験。成功経路や過去のSimulationで代替しない。最終Trust Policy全文のCLI再取得も未実施 |
 | ConfigEvidenceReadRoleのS3変更API拒否 | 対象prefix内の仮想object ARNでGetObject=allowed、PutObject/DeleteObject=implicitDeny | identity policyのSimulation確認済み。実Put/Delete・bucket設定変更は未試験。実データを変更しない検証方法と必要範囲をPhase 8で判断する |
 | 現在のIAM権限全体 | 実行Roleの20 policy本文をJSONで確認。主要変更箇所・KMS Key Policy・Budget関連はCLI取得結果でも照合（第5.1節） | 全policy本文のCLI再取得・権限合成の網羅的監査は未完了。広いCreateTags、resource／region範囲等の最小権限化は別課題 |
 
 ## 5. 確認済みの結果と確認範囲
 
-今回の再照会と過去の共有結果を区別する。詳細は非公開作業記録へ集約する。
+APIの再照会と過去の試験時の結果を区別する。詳細は非公開作業記録へ集約する。
 
-| 項目 | 共有済みの結果・範囲 |
+| 項目 | 確認済みの結果・範囲 |
 |---|---|
 | Config Recorder | Phase 6時点でRecording=True、LastStatus=SUCCESS。現行コードはNetwork 7種類追加後の17種類・CONTINUOUS。EC2 Instance／Volume／ENIは記録対象外 |
 | Config配送 | 2026-09-11再照会でSnapshot・HistoryともSUCCESS、StreamはNOT_APPLICABLE。SNS未採用の構成と整合 |
@@ -69,18 +69,18 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 
 ### 5.1 2026-09-28 IAM整理・MFA検証（実行結果）
 
-以下は私が実行・共有したJSON、CLI出力、保存・削除記録に基づく。
+以下は試験時のJSON、CLI出力、保存・削除記録に基づく。
 記録更新時のAWS API再取得と、生のAPI応答ファイルの保存・hash照合は未実施である。
 
 | 対象 | 結果と根拠 |
 |---|---|
-| 誤った名称のKMS管理inline policy | 内容は通常閲覧Roleの重複管理許可と一時監査Roleの管理許可だったため削除。削除後No changesと、CLI取得のinline一覧からの不在を共有 |
+| 誤った名称のKMS管理inline policy | 内容は通常閲覧Roleの重複管理許可と一時監査Roleの管理許可だったため削除。削除後No changesと、CLI取得のinline一覧からの不在を確認 |
 | Flow Logs本文読取・旧請求権限 | 一時的なGetObject Statementと旧aws-portal Statementを削除。各削除後No changes、有効なmanaged policy版／inline本文のCLI取得結果で不在を確認 |
 | EC2試験・Config監査用権限 | AMI名のpolicyはEC2 Describeのみ、Config閲覧Role管理は通常Roleのみ、Config storageのKMS操作はDescribeKey／GetKeyPolicyのみであることをCLI取得結果で確認 |
 | KMS Key Policy | 一時監査Role向けの復号許可なし。Terraform実行Roleへの直接許可にPutKeyPolicy／Decrypt／DisableKey／ScheduleKeyDeletionなし。通常のservice・ログ閲覧Roleへの許可とaccount recoveryは維持。これだけでIAM経由の全実効権限不在とは断定しない |
 | Budget関連 | 実行Roleのtrust、inline一覧・本文、managed policy一覧、抑止policy有効版をCLI取得結果で照合。指定実行Roleへ指定Deny policyだけを付け外しする構造。実際のしきい値発火・自動attachは未試験 |
 | MFAの事前検証 | 操作権限を付けない一時Roleで条件なしのAssumeRole成功。BoolのMultiFactorAuthPresent=true条件へ変更し、保存内容確認・時間を置いた再要求とも成功。認証元TYPEはlogin |
-| 既存Terraform実行Roleへの適用 | 変更前のCLI取得TrustにMFA条件がなかったため、承認で条件追加を実施。追加後の新規AssumeRole成功、通常planのNo changesを共有。最終Trust全文の再取得とMFAなし拒否試験は未実施 |
+| 既存Terraform実行Roleへの適用 | 変更前のCLI取得TrustにMFA条件がなかったため条件追加を実施。追加後の新規AssumeRole成功、通常planのNo changesを確認。最終Trust全文の再取得とMFAなし拒否試験は未実施 |
 | 後片付け | 一時MFA検証Roleとユーザー側の一時監査inline policyは両方削除済み。削除後の不在API照会・監査API再拒否の確認は未実施 |
 
 一時権限の撤去と、既存Baselineの最小権限化は分ける。広いCreateTagsとタグ条件付き管理許可の
@@ -151,7 +151,7 @@ Cleanup失敗時は残存ID、error、課金継続を記録し、終了扱いに
 
 | 対象 | 結果・根拠 |
 |---|---|
-| 通信試験 | 保存証跡と共有結果でHTTP 8080成功、受信側ENIの8080 ACCEPT／8081 REJECT・log-status=OKを照合済み |
+| 通信試験 | 保存証跡と試験時のCLI結果でHTTP 8080成功、受信側ENIの8080 ACCEPT／8081 REJECT・log-status=OKを照合済み |
 | Config監査 | P7 VPCのFlow Logs、Default SG、試験SGのSSH公開防止を対象別にCOMPLIANT確認。別VPCの不適合は対象外として分離 |
 | 削除記録 | 一時監査Roleで取得したConfigのS3原本本文に、試験SG 2個のResourceDeletedを照合済み。原本・照合結果・SHA-256は非公開で保存 |
 | 撤去後の再確認 | 9月23日のAPIで試験用の非terminated EC2・SG、P7 VPC内ENI、東京RegionのEBSはいずれも0件 |
