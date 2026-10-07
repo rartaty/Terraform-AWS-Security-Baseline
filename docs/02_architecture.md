@@ -102,7 +102,7 @@ Phase 8  統合試験・証跡・後片付け・文書化
 - 実績額が1、3、5、8、10 USDを超えた場合のEメール通知を設定した。
 - クレジット、返金、税、Support料金を予算計算から除外した。
 - 通知先はGit管理外の`terraform.tfvars`に保存し、公開可能なexampleにはダミー値だけを記載した。
-- ADR 0003に基づき、実績10 USDでTerraformExecutionRoleへ高額作成抑止Policyを自動attachするBudget Actionを実装した。Action用Roleと対象Policyは手動管理である。
+- 実績10 USDでTerraformExecutionRoleへ高額作成抑止Policyを自動attachするBudget Actionを実装した。Action用Roleと対象Policyは手動管理である。Phase 7.5の専用Roleには別Actionを追加した。
 - 新しいOutlookとWindows 11の通知を有効化し、通常メールによるデスクトップ通知経路を確認した。
 - Terraform AWS Providerが実行Roleを確実に使用するよう、ProviderにもAWS profileを明示した。
 
@@ -124,8 +124,8 @@ Phase 8  統合試験・証跡・後片付け・文書化
 ### Phase 3: 共通セキュリティ基盤
 
 2026-09-11時点: KMS keyとアカウントレベルS3公開防止は実装済み。
-当初計画のaliasは、固定したkey ARNを直接参照する単純性を優先して不採用とした（ADR 0009）。
-KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
+当初計画のaliasは、固定したkey ARNを直接参照する単純性を優先して不採用とした。
+KMS keyはCloudTrailとConfigで共有する。
 通常の`TerraformExecutionRole`から`kms:DisableKey`と`kms:ScheduleKeyDeletion`を除去し、
 一時的な`kms:PutKeyPolicy`の撤去とapply後の`No changes`を確認したため、Phase 3は完了とする。
 
@@ -135,7 +135,7 @@ KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
 
 予定内容:
 
-- customer managed KMS keyを作成する。aliasはADR 0009により採用しない。
+- customer managed KMS keyを作成する。固定key ARNを直接参照し、aliasは採用しない。
 - key policy、rotation、削除待機期間を設計する。
 - アカウントレベルのS3 Block Public Accessを有効化する。
 
@@ -157,7 +157,7 @@ KMS keyはCloudTrailとConfigで共有する（ADR 0006・0008）。
 
 予定内容:
 
-- CloudTrailとログ保存用S3 bucketを構成する。CloudWatch Logs転送はADR 0005により見送る。
+- CloudTrailとログ保存用S3 bucketを構成する。CloudWatch Logs転送は検索・監視要件と追加費用を踏まえ見送る。
 - bucket暗号化、versioning、公開防止、HTTPS必須、ログ改ざん防止を設定する。
 - 管理イベントを対象とし、データイベントとCloudTrail Insightsは初期対象外とする。
 
@@ -200,7 +200,7 @@ HTTPS必須化を適用した。apply後の`No changes`、`IsLogging=True`、
 
 ### Phase 6: 構成・コンプライアンス管理
 
-2026-09-11時点: ADR 0008の10種類の継続記録、専用S3、共有KMS、7 Managed Rules、
+2026-09-11時点: 10種類の継続記録、専用S3、共有KMS、7 Managed Rules、
 ConfigEvidenceReadRoleを実装済み。dev planはNo changes、Recorder稼働、Snapshot/History配送成功、7 RuleすべてCOMPLIANTを再確認した。
 S3 identity policy・MFA条件単体はSimulation確認済み。実APIによる拒否試験の未実施範囲と利用量・実料金観測は [試験計画](05_test_plan.md) で管理する。
 
@@ -308,7 +308,7 @@ Config追加は既存resourceも記録・評価し得るため、対象範囲・
 
 - AWS Network FirewallはSecurity Baselineの常設componentに含めない。
 - Phase 7のVPC、Subnet、Route、Security Group、Flow Logsの理解と検証を先に完了させる。
-- 別ADRと分離したTerraform構成で、1 AZの単純なinspection pathとして設計する。
+- 分離したTerraform構成・専用Role／Boundaryで、1 AZの単純なinspection pathとして設計する。
 - 作成直前に東京RegionのFirewall Endpoint時間料金、data processing料金、
   log保存料金およびtest resource料金を再見積りし、利用者の明示承認後にapplyする。
 - 最初に`ALERT`でmatchとlogを確認し、意図したtrafficだけが対象になることを確認してから`DROP`を試す。
@@ -323,9 +323,13 @@ Config追加は既存resourceも記録・評価し得るため、対象範囲・
 
 完了条件:
 
-- StatelessとStateful ruleの違い、`ALERT`と`DROP`の違いを説明できる。
-- test trafficについてFirewall LogとVPC Flow Logを関連付けられる。
+- 同じHTTP portの試験URIを`ALERT`で検知、`DROP`で遮断し、前後の通常URIの成功を確認する。
+- 同一接続のHTTP結果とFirewall ALERTログの署名・actionを照合する。FLOWログは往復通信の補助確認とする。
 - destroy後にFirewall Endpointおよび関連する課金resourceが残っていない。
+
+2026-10-08に上記のHTTP・ALERT／DROP照合とLab主要resourceの撤去を確認した。
+Stateless側はStateful engineへの転送を設定し、独立したStateless遮断試験は行っていない。
+IAM・Budget・backend等の残整理と費用確認は[試験計画](05_test_plan.md)を参照する。
 
 ### Phase 8: 統合試験・証跡・後片付け・文書化
 

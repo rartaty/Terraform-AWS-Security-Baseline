@@ -28,13 +28,13 @@ Infrastructure as Codeの学習を目的とする。
 ### 監査ログ
 - AWS CloudTrail
 - CloudTrailログ保存用S3バケット
-- CloudWatch Logsへのログ転送はADR 0005により今回見送り。必要性・料金を再判断してから追加する。
+- CloudWatch Logsへのログ転送は今回見送り。検索・監視の必要性と追加料金を再判断してから追加する。
 - ログ暗号化
 - ログ改ざん・公開防止
 
 ### セキュリティ検知
 - Amazon GuardDuty
-- AWS Security Hub Essentials / CSPM（採用範囲はADR 0007）
+- AWS Security Hub Essentials / CSPM（採用範囲は[アーキテクチャ](02_architecture.md)を参照）
 - IAM Access Analyzer
 
 ### 構成管理

@@ -38,7 +38,7 @@
 ## 3. 現行構成を前提とする条件付き見積り
 
 旧Phase別累計はCloudWatch Logsと一時費用が混在していたため置き換える。
-ADR 0008の初期概算も実測上限ではない。以下は無料trial・税・為替を除き、実利用量の代わりに
+Phase 6の初期概算も実測上限ではない。以下は無料trial・税・為替を除き、実利用量の代わりに
 仮定を置いた計画モデルである。東京Regionの全SKUを確定した見積りではなく、apply前に再確認する。
 
 | 費目・Phase | 前提 | 月額USD |
@@ -83,7 +83,7 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 - クレジットと返金によって実際の利用規模が隠れないよう、予算計算から除外する。
 - 税とSupport料金はAWSリソース利用額の監視対象ではないため除外する。
 - Budget Actionによる自動停止・自動削除は使用しない。
-- ADR 0003に基づくBudget Actionは実装済み。実績10 USDでTerraformExecutionRoleへ高額作成抑止Policyを自動attachする。既存resourceの稼働・課金は止まらず、拒否対象外の操作や別identityには適用されない。
+- Budget Actionは実装済み。実績10 USDでTerraformExecutionRoleへ高額作成抑止Policyを自動attachする。既存resourceの稼働・課金は止まらず、拒否対象外の操作や別identityには適用されない。Phase 7.5の専用Roleには別Actionを追加した。
 - SNSとBudget Reportsは初期構成では使用しない。
 - action-enabled budgetは最初の2件まで無料で、追加分には日額料金がある。
 - Budget Reportsは有料なので本件では使わない。
