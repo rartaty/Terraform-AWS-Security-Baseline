@@ -1,0 +1,15 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowOnlyOperatorWithMfaBeforeExpiry",
+      "Effect": "Allow",
+      "Principal": { "AWS": "arn:aws:iam::<ACCOUNT_ID>:user/terraform-operator" },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "Bool": { "aws:MultiFactorAuthPresent": "true" },
+        "DateLessThan": { "aws:CurrentTime": "<SETUP_EXPIRY_UTC>" }
+      }
+    }
+  ]
+}
