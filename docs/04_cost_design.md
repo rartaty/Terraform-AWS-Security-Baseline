@@ -157,6 +157,8 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 - Phase 7の2 AZ Baselineへ常設せず、1 AZの単純なinspection pathとして短時間だけ構築する。2 AZへ配置するとEndpoint時間料金も2系統分になる。
 - `ALERT`確認後に`DROP`を試し、試験当日にdestroyする。作成前に東京Regionの現行単価と予定稼働時間から上限見積りを作り、利用者の明示承認を得る。
 - Firewall Endpoint、専用Route、Log出力先およびtest resourceの削除をCLIで確認するまで、Labを終了扱いにしない。
+- 2026-10-07にAWS公開料金データの東京Regionで、標準Endpoint 0.395 USD/時間、処理0.065 USD/GBを確認した。1 AZ・Endpoint 1個・2時間ならEndpoint部分は0.79 USD。EC2・EBS・ログ・Config等の増分と税は別で、合計見積りと費用承認は未完了。出典は[東京の公開料金データ](https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSNetworkFirewall/current/ap-northeast-1/index.json)（publicationDate: 2026-09-11）。
+- Lab専用Roleは既存Budget Actionの対象に自動追加されない。Lab用作成抑止の設定と撤去権限を確認してから課金開始する。
 
 ## 5. 課金開始前の停止点
 
