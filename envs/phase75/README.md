@@ -15,9 +15,14 @@ blocked／dropを同一接続で照合した。前後の通常URIはHTTP 200を�
 TLS inspection・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外。
 
 Lab主要resource 23個をdestroyし、指定名・Labタグ・Private IP範囲で不在を確認した。
-IAM・Budget Action・backendの整理、配送policyの追加の残存確認、証跡内容の整理と
-費用反映後の確認は残る。2026-10-09に証跡をGit対象外の`learning-records/evidence/`へコピーし、
-元とのSHA-256一致を確認した。account全体の残存ゼロやBaseline全体の課金停止を意味しない。
+2026-10-09にLab IAM・Budget Action・backendの整理を完了した。Budget ActionはAPI、
+IAMの削除後不在とbackendの全version・削除マーカー残存0件はConsoleで確認した。
+CloudWatch Logsのresource policyはACCOUNT／RESOURCE両scopeをAPI再取得し、両方0件だった。
+証跡をGit対象外の`learning-records/evidence/`へコピーし、元とのSHA-256一致を確認した。
+Lab stateの全31 versionも同領域に保全し、サイズ・SHA-256を照合後にS3から完全削除した。
+共有backend bucketとBaseline用stateは保持した。証跡内容と試験判定の整理、費用反映後の確認は残る。
+削除後のIAM・backend API再取得と内部ログ配送情報の全件照会は未実施。
+account全体の残存ゼロやBaseline全体の課金停止を意味しない。詳細は[試験・確認状況](../../docs/05_test_plan.md)を参照する。
 
 ## 構成
 

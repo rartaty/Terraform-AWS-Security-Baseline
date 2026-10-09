@@ -1,6 +1,6 @@
 # 試験計画・確認状況と残作業
 
-- 同期日: 2026-10-08（Phase 7.5の試験・主要resource撤去結果と公開文書の範囲を反映。個別試験日は各行を参照）
+- 同期日: 2026-10-09（Phase 7.5のIAM・Budget・backend整理と確認範囲を反映。個別試験日は各行を参照）
 - 対象: dev環境と短期Lab、Phase 3〜7.5の構成・試験状況
 - 根拠: Terraformコード、設計文書、実行結果、非公開の詳細記録
 - 2026-09-11にdevの通常plan（refresh有効）、Config Recorder・配送・7 Ruleのread-only APIを再実行した。その他の機能試験は各試験時の実行結果を根拠とする。bootstrapと手動管理IAM全体の実効権限監査は今回のplanに含まれない。
@@ -20,7 +20,7 @@
 |---|---|---|
 | Phase 7のNetwork Baseline | 実装・主要検証済み | 静的要件と保存証跡の対応付けを完了する。第7.4節参照 |
 | Phase 7のACCEPT／REJECT試験 | HTTP応答・受信側ENIのACCEPT／REJECT照合、一時resource撤去済み。手動IAMの整理結果と確認範囲は第5.1節へ記録済み | 試験の再作成は不要。IAMの未確認範囲は第4節と区別して管理する |
-| Phase 7.5のAWS Network Firewall | 2026-10-08に構築、同一接続のHTTP結果とALERT／DROP署名照合、前後の通常URIの成功、非公開証跡保存、Lab主要resource 23個の撤去を確認。[Lab構成・手順](../envs/phase75/README.md) | Lab IAM・Budget Action・backendの整理、配送policyの追加の残存確認、一時設定Roleの削除後API確認、証跡内容と試験判定の整理、反映後の費用確認。指定名・Labタグ・IP範囲での不在確認をaccount全体の残存ゼロと扱わない。TLS・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外 |
+| Phase 7.5のAWS Network Firewall | 2026-10-08に構築、同一接続のHTTP結果とALERT／DROP署名照合、前後の通常URIの成功、非公開証跡保存、Lab主要resource 23個の撤去を確認。2026-10-09にLab IAM・Budget Action・backendの整理を完了。確認方法は第5.2節。[Lab構成・手順](../envs/phase75/README.md) | 証跡内容と試験判定の整理、反映後の費用確認。削除後のIAM・backend API再取得と内部ログ配送情報の全件照会は未実施として区別する。指定名・Labタグ・IP範囲での不在確認をaccount全体の残存ゼロと扱わない。TLS・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外 |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
 
@@ -86,6 +86,18 @@ policyの静的確認とエラーで確認できたAction、実行Role、対象�
 一時権限の撤去と、既存Baselineの最小権限化は分ける。広いCreateTagsとタグ条件付き管理許可の
 組合せ、Phase 5のresource／region範囲、Budget trustの全Budget対象などは改善候補として残す。
 No changesは通常planの参照処理を確認した結果であり、将来の作成・更新・削除権限の保証ではない。
+
+### 5.2 2026-10-09 Phase 7.5の後片付け
+
+| 対象 | 確認結果・範囲 |
+|---|---|
+| Lab IAM | Lab実行Role、通常managed policy 4つ、専用Boundary、Lab用Budget抑止policy・付け外しinline policyをConsoleで削除し、不在を確認した。初期設定用・監査用・state保全用の一時Roleも削除した。削除後のIAM API再取得は未実施 |
+| Budget Action | Lab専用Actionを削除し、API再取得でBaseline用ActionのみSTANDBYで残ることを確認した。Baseline用のBudget・権限は保持した |
+| ログresource policy | ACCOUNT／RESOURCE両scopeをAPI再取得し、両方0件を確認した。内部のログ配送情報の全件照会とは区別する |
+| Lab backend | 削除前のCLI一覧でstate 31 version、lockfile 47 version・削除マーカー47件を確認。state全31 versionと取得前後の一覧を非公開保存し、33ファイルのサイズ・SHA-256を再照合した。計125件をConsoleで完全削除し、bucket直下でversion表示ON・対象prefixの検索確定後に残存0件を確認した。削除後のAPI再取得は未実施。lockfile本文は保全していない |
+| 保持対象 | 共有backend bucketとBaseline用stateを保持した。Labの撤去をBaseline全体の撤去・課金停止と扱わない |
+| 通常plan | Lab Budget Action削除後は0追加・1変更・0削除。GuardDutyの追加設定差分1件が残り、未適用。過去のNo changesと現在の差分を区別する |
+| 費用 | 10月7〜8日（UTC）のアカウント全体サービス別料金を取得したが、両日Estimated=true。Lab単独の費用帰属、確定費用、撤去後の課金停止は未確認 |
 
 ## 6. 証跡の管理と終了条件
 
@@ -184,6 +196,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 今回この保護も待機日数も変更しない。
 
 ## Activity Log
+
+- 2026-10-09: Lab stateの全31 versionと取得前後の一覧をGit対象外へ保存し、33ファイルのサイズ・SHA-256一致を確認した。読み取り用一時RoleをConsoleで削除し、Lab用state・lockfileの全versionと削除マーカー計125件を完全削除。共有bucketを保持し、bucket直下でversion表示ON・対象prefix検索後の残存0件をConsoleで確認した。削除後のAPI再取得は未実施。試験状況の残作業を同期し、費用の未確定とGuardDuty差分は維持した。
 
 - 2026-10-09: ログresource policy確認用の一時監査RoleをConsoleで削除し、一覧再検索で不在を確認した。削除後のIAM API再取得は未実施。Lab backendの旧state version・lockfile確認、反映後の費用確認を継続する。
 
