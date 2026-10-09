@@ -148,7 +148,7 @@ TerraformExecutionRoleが操作できるAWS resourceを必要最小限にする�
 2026-09-28のCLI結果では、TerraformExecutionRoleのTrustにMFA条件がなかった。
 既存の接続を止めないよう操作権限のない一時Roleで条件付きAssumeRoleの成功を確認した後、
 承認により既存Roleへ`Bool: aws:MultiFactorAuthPresent = true`を追加した。
-新規AssumeRole成功と通常planのNo changesが共有され、一時Role・監査権限は削除済み。
+新規AssumeRole成功と通常planのNo changesをCLI出力で確認し、一時Role・監査権限を削除した。
 これは今回のlogin sessionによる成功経路の確認であり、MFAなしの拒否試験や最終Trust全文の
 CLI再取得は未実施である。詳細と確認限界は[試験計画5.1](05_test_plan.md)を参照する。
 
