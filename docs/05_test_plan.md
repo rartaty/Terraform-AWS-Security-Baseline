@@ -96,7 +96,7 @@ No changesは通常planの参照処理を確認した結果であり、将来の
 | ログresource policy | ACCOUNT／RESOURCE両scopeをAPI再取得し、両方0件を確認した。内部のログ配送情報の全件照会とは区別する |
 | Lab backend | 削除前のCLI一覧でstate 31 version、lockfile 47 version・削除マーカー47件を確認。state全31 versionと取得前後の一覧を非公開保存し、33ファイルのサイズ・SHA-256を再照合した。計125件をConsoleで完全削除し、bucket直下でversion表示ON・対象prefixの検索確定後に残存0件を確認した。削除後のAPI再取得は未実施。lockfile本文は保全していない |
 | 保持対象 | 共有backend bucketとBaseline用stateを保持した。Labの撤去をBaseline全体の撤去・課金停止と扱わない |
-| 通常plan | Lab Budget Action削除後は0追加・1変更・0削除。GuardDutyのRDS_LOGIN_EVENTSは前後ともDISABLEDだが、返されたRDS_DATA_RISK=DISABLEDが構成にないため追加設定の除去差分が残る。Provider 6.58.0はこの名前の明示をオフラインvalidateで拒否した。未適用とし、広いignore_changesで隠さない。過去のNo changesと現在の差分を区別する |
+| 通常plan | RDS_LOGIN_EVENTSを専用resourceへ分離し、moved blockと、そのresourceのadditional_configurationだけを無視する限定例外を追加した。fmt・validate成功、refresh付きplanは移動のみでAWS resourceの追加・変更・削除0件。GetDetectorで機能とRDS_DATA_RISKが両方DISABLEDであることを再確認。apply未実施、stateの移動記録は未反映 |
 | 費用 | 10月7〜8日（UTC）のアカウント全体サービス別料金を取得したが、両日Estimated=true。Lab単独の費用帰属、確定費用、撤去後の課金停止は未確認 |
 
 ### 5.3 保存原本とPhase 7.5試験判定の対応付け
@@ -214,6 +214,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 今回この保護も待機日数も変更しない。
 
 ## Activity Log
+
+- 2026-10-09: RDS_LOGIN_EVENTSだけを専用resourceへ分離し、moved blockと追加設定だけのignore_changesを実装した。statusと他featureの差分検知を維持。fmt・validate、通常refresh付きplanで移動のみ・AWS変更0件を確認し、既存GetDetector権限でRDS機能・追加設定のDISABLEDを再取得した。原本・plan・SHA-256は非公開保存。IAM追加・Provider更新・apply・pushは行っていない。
 
 - 2026-10-09: GuardDutyの対応版を公式実装・SDKと照合し、最新公開Provider 6.68.0を非公開の独立rootで取得してvalidateした。RDS_DATA_RISKは引き続き拒否されたため、本体6.58.0を維持した。開発中SDKの対応と公開済みProviderの対応を区別し、更新や差分無視は未適用。AWS API・backend・plan・applyはこの検証で実行していない。
 
