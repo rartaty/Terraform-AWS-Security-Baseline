@@ -185,6 +185,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
+- 2026-10-09: Lab backendの参照先と専用Roleを照合し、default workspace、state一覧が空、state pullのresources=0を確認。原本とSHA-256をGit対象外へ保存した。共有backend bucket・remote state object・IAMはこの確認で削除していない。
+
 - 2026-10-09: 保存した対象限定planでLab専用Budget Action 1件を削除。削除後のAPIでBaseline用ActionのみSTANDBYで残ることを確認した。全体planはGuardDutyの追加設定差分1件のみで、0追加・1変更・0削除。GuardDuty差分は未適用、Lab用IAM・backend等の整理は継続する。
 
 - 2026-10-09: Lab専用Budget Actionを構成から除去し、fmt・validateを確認。refresh付き通常planはLab Actionの削除1件に加え、GuardDutyのRDS_LOGIN_EVENTS配下のRDS_DATA_RISK=DISABLEDの削除差分を検出したため未適用。予期しない差分は今回の撤去と分離して扱い、Baseline用Budget Actionは維持する。
