@@ -185,6 +185,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
+- 2026-10-09: 保存した対象限定planでLab専用Budget Action 1件を削除。削除後のAPIでBaseline用ActionのみSTANDBYで残ることを確認した。全体planはGuardDutyの追加設定差分1件のみで、0追加・1変更・0削除。GuardDuty差分は未適用、Lab用IAM・backend等の整理は継続する。
+
 - 2026-10-09: Lab専用Budget Actionを構成から除去し、fmt・validateを確認。refresh付き通常planはLab Actionの削除1件に加え、GuardDutyのRDS_LOGIN_EVENTS配下のRDS_DATA_RISK=DISABLEDの削除差分を検出したため未適用。予期しない差分は今回の撤去と分離して扱い、Baseline用Budget Actionは維持する。
 
 - 2026-10-09: Temp内の本件証跡・監査結果・実行入力をGit対象外のローカル領域へコピーし、54ファイルのSHA-256一致を確認。証跡取得スクリプトも同領域を既定保存先とし、書込み前のGit除外・未追跡確認を追加。Temp原本の削除、AWS変更、別媒体バックアップは行っていない。
