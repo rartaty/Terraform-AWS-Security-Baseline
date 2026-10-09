@@ -310,7 +310,7 @@ Config追加は既存resourceも記録・評価し得るため、対象範囲・
 - Phase 7のVPC、Subnet、Route、Security Group、Flow Logsの理解と検証を先に完了させる。
 - 分離したTerraform構成・専用Role／Boundaryで、1 AZの単純なinspection pathとして設計する。
 - 作成直前に東京RegionのFirewall Endpoint時間料金、data processing料金、
-  log保存料金およびtest resource料金を再見積りし、利用者の明示承認後にapplyする。
+  log保存料金およびtest resource料金を再見積りし、費用・対象・差分を確認し、手動承認してapplyする。
 - 最初に`ALERT`でmatchとlogを確認し、意図したtrafficだけが対象になることを確認してから`DROP`を試す。
 - 試験当日にNetwork Firewall、Firewall Endpoint、test resourceおよび専用Routeをdestroyし、
   AWS CLIでも課金resourceが残っていないことを確認する。

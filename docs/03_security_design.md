@@ -116,7 +116,7 @@ Trust Boundaryとは、管理主体または信頼条件が異なる領域の境
 ### TB-01: Windows PCとAWS認証の境界
 
 個人所有のWindows PCは、AWSアカウントの外部に存在する。
-利用者本人はInternet経由で`aws login`を実行し、
+通常作業ではInternet経由で`aws login`を実行し、
 AWSのsign-inとMFAを経て一時認証情報を取得する。
 
 この境界では、偽のsign-in画面による認証情報の窃取、
@@ -180,7 +180,7 @@ AWS resourceの不正な作成・変更・削除を脅威として扱う。
 対策として、AWS Providerのversionとchecksumを
 `.terraform.lock.hcl`で固定する。
 Apply前に`terraform fmt`、`terraform validate`、
-`terraform plan`と変更差分を確認し、本人が手動で承認する。
+`terraform plan`と変更差分を確認し、自分で手動承認する。
 
 TerraformExecutionRoleのpermissionを必要最小限にし、
 AWS APIへの通信にはHTTPSを使用する。
@@ -394,7 +394,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 固有risk | 発生可能性3 × 影響度3 = 9（高） |
 | 現在の残存risk | 発生可能性2 × 影響度3 = 6（高） |
 | 目標残存risk | 発生可能性1 × 影響度2 = 2（低） |
-| 残存risk | Planを確認する利用者自身が誤って承認する可能性は残る。checksumは正規Providerの意図しない仕様変更までは防止しない |
+| 残存risk | Planの確認で自分が誤って承認する可能性は残る。checksumは正規Providerの意図しない仕様変更までは防止しない |
 
 ### TH-07: S3 bucketの意図しない公開
 
