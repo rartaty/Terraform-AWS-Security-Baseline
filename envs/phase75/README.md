@@ -20,7 +20,9 @@ IAMの削除後不在とbackendの全version・削除マーカー残存0件はCo
 CloudWatch Logsのresource policyはACCOUNT／RESOURCE両scopeをAPI再取得し、両方0件だった。
 証跡をGit対象外の`learning-records/evidence/`へコピーし、元とのSHA-256一致を確認した。
 Lab stateの全31 versionも同領域に保全し、サイズ・SHA-256を照合後にS3から完全削除した。
-共有backend bucketとBaseline用stateは保持した。証跡内容と試験判定の整理、費用反映後の確認は残る。
+共有backend bucketとBaseline用stateは保持した。保存原本と代表ALERT／DROP試験の対応付けを完了し、
+前後の通常URIの成功も再照合した。代表DROP通信のFLOWログは保存範囲に見つからず未照合。
+費用反映後の確認は残る。
 削除後のIAM・backend API再取得と内部ログ配送情報の全件照会は未実施。
 account全体の残存ゼロやBaseline全体の課金停止を意味しない。詳細は[試験・確認状況](../../docs/05_test_plan.md)を参照する。
 
