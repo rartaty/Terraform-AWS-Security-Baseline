@@ -185,6 +185,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
+- 2026-10-09: ログresource policy確認用の一時監査RoleをConsoleで削除し、一覧再検索で不在を確認した。削除後のIAM API再取得は未実施。Lab backendの旧state version・lockfile確認、反映後の費用確認を継続する。
+
 - 2026-10-09: MFA・期限・東京Regionに限定した読取専用の一時Roleで、CloudWatch Logsのresource policyをACCOUNT／RESOURCE両scopeで再取得し、両方0件を確認した。通常Roleの権限変更、ログ設定の書込み・削除は行っていない。内部のログ配送情報の全件照会とは区別し、一時監査Roleの撤去は残確認とする。
 
 - 2026-10-09: Lab用Budget抑止policyと一時Firewall Policy設定Role・一時ログ設定Roleの不在をConsoleの再検索で確認した。IAM API再取得は未実施。Cost Explorerで10月7〜8日（UTC）のアカウント全体サービス別料金を取得・非公開保存したが、両日Estimated=trueのため確定費用・課金停止は未確認。
