@@ -25,7 +25,7 @@ Boundary導入だけを全実効権限の最小化完了とは扱わない。
 ## 設定と変更管理
 
 - 公開JSONはplaceholder版とし、実ARN・account ID・監査結果・生成JSONはGitへ保存しない。
-- `scripts/Export-BoundaryAudit.ps1`で指定対象の設定を読み取り、非公開で保存する。一時監査許可は作業後に撤去する。
+- `scripts/Export-BoundaryAudit.ps1`で指定対象の設定を読み取り、Git対象外の`learning-records/evidence/`へ保存する。書込み前にGit除外と未追跡を確認する。一時監査許可は作業後に撤去する。
 - `scripts/New-BoundaryPolicyFiles.ps1`で非公開の実値版を生成する。JSON・文字数検査は実認可検証の代用ではない。
 - 閲覧RoleのBoundaryはdevの非公開変数で維持する。移行後に値をnullへ戻すとBoundary削除がplanされるため、意図せず戻さない。
 - 新しいActionを追加する際は通常許可とBoundaryの双方を確認し、MFA付きの新規session、plan、必要な許可／拒否を検証する。

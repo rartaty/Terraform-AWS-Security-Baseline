@@ -20,7 +20,7 @@
 |---|---|---|
 | Phase 7のNetwork Baseline | 実装・主要検証済み | 静的要件と保存証跡の対応付けを完了する。第7.4節参照 |
 | Phase 7のACCEPT／REJECT試験 | HTTP応答・受信側ENIのACCEPT／REJECT照合、一時resource撤去済み。手動IAMの整理結果と確認範囲は第5.1節へ記録済み | 試験の再作成は不要。IAMの未確認範囲は第4節と区別して管理する |
-| Phase 7.5のAWS Network Firewall | 2026-10-08に構築、同一接続のHTTP結果とALERT／DROP署名照合、前後の通常URIの成功、非公開証跡保存、Lab主要resource 23個の撤去を確認。[Lab構成・手順](../envs/phase75/README.md) | Lab IAM・Budget Action・backendの整理、配送policyの追加の残存確認、一時設定Roleの削除後API確認、証跡の恒久保管と反映後の費用確認。指定名・Labタグ・IP範囲での不在確認をaccount全体の残存ゼロと扱わない。TLS・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外 |
+| Phase 7.5のAWS Network Firewall | 2026-10-08に構築、同一接続のHTTP結果とALERT／DROP署名照合、前後の通常URIの成功、非公開証跡保存、Lab主要resource 23個の撤去を確認。[Lab構成・手順](../envs/phase75/README.md) | Lab IAM・Budget Action・backendの整理、配送policyの追加の残存確認、一時設定Roleの削除後API確認、証跡内容と試験判定の整理、反映後の費用確認。指定名・Labタグ・IP範囲での不在確認をaccount全体の残存ゼロと扱わない。TLS・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外 |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
 
@@ -184,6 +184,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 今回この保護も待機日数も変更しない。
 
 ## Activity Log
+
+- 2026-10-09: Temp内の本件証跡・監査結果・実行入力をGit対象外のローカル領域へコピーし、54ファイルのSHA-256一致を確認。証跡取得スクリプトも同領域を既定保存先とし、書込み前のGit除外・未追跡確認を追加。Temp原本の削除、AWS変更、別媒体バックアップは行っていない。
 
 - 2026-09-28: IAM整理、主要policyのCLI取得結果、MFA条件付き新規AssumeRole成功、No changes、一時Role・監査権限の削除報告を反映。MFAなし拒否試験・最終Trust全文再取得・全policy本文のCLI再取得・削除後のAPI確認は未実施として区別。今回の作業は文書更新のみ。
 

@@ -12,6 +12,15 @@ $phase75Name = 'terraform-aws-security-baseline-dev-phase75-firewall'
 if ($ClientInstanceId -eq $ServerInstanceId) { throw 'Supply two distinct Lab instances.' }
 if ($StartedAt -gt [DateTimeOffset]::UtcNow) { throw 'Start time must not be in the future.' }
 
+# Keep raw evidence locally, outside the Git index, and never overwrite a prior run.
+$phase75Repository = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
+$phase75Destination = Join-Path $phase75Repository ('learning-records/evidence/phase75-evidence-' + [guid]::NewGuid())
+& git -C $phase75Repository check-ignore --quiet -- $phase75Destination
+if ($LASTEXITCODE -ne 0) { throw 'Evidence destination must be ignored by Git before collection.' }
+$phase75TrackedEvidence = @(& git -C $phase75Repository ls-files -- $phase75Destination)
+if ($LASTEXITCODE -ne 0 -or $phase75TrackedEvidence.Count -ne 0) { throw 'Cannot verify an untracked evidence destination.' }
+if (Test-Path -LiteralPath $phase75Destination) { throw 'Evidence directory already exists.' }
+
 function Invoke-Phase75EvidenceRead {
     param([string[]]$Arguments)
     $response = & aws @Arguments --profile $Profile --region $phase75Region --output json --no-cli-pager
@@ -34,13 +43,7 @@ foreach ($phase75Instance in $phase75InstanceList) {
     }
 }
 
-# A unique private directory preserves existing evidence and never writes inside Git.
-$phase75Destination = [IO.Path]::GetFullPath((Join-Path ([IO.Path]::GetTempPath()) ('phase75-evidence-' + [guid]::NewGuid())))
-$phase75RepositoryPrefix = [IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent)).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
-if ($phase75Destination.StartsWith($phase75RepositoryPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-    throw 'Evidence must remain outside the repository.'
-}
-[void](New-Item -ItemType Directory -Path $phase75Destination)
+[void](New-Item -ItemType Directory -Path $phase75Destination -Force)
 function Save-Phase75EvidenceJson {
     param([string]$Name, $Document)
     [IO.File]::WriteAllText((Join-Path $phase75Destination $Name), ($Document | ConvertTo-Json -Depth 100), [Text.UTF8Encoding]::new($false))

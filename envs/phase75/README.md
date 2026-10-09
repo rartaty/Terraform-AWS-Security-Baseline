@@ -15,8 +15,9 @@ blocked／dropを同一接続で照合した。前後の通常URIはHTTP 200を�
 TLS inspection・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外。
 
 Lab主要resource 23個をdestroyし、指定名・Labタグ・Private IP範囲で不在を確認した。
-IAM・Budget Action・backendの整理、配送policyの追加の残存確認、証跡の恒久保管と
-費用反映後の確認は残る。account全体の残存ゼロやBaseline全体の課金停止を意味しない。
+IAM・Budget Action・backendの整理、配送policyの追加の残存確認、証跡内容の整理と
+費用反映後の確認は残る。2026-10-09に証跡をGit対象外の`learning-records/evidence/`へコピーし、
+元とのSHA-256一致を確認した。account全体の残存ゼロやBaseline全体の課金停止を意味しない。
 
 ## 構成
 
@@ -113,14 +114,15 @@ DROP後のplanでは`-var=rule_action=drop`を維持するか、非公開tfvars�
 `scripts/Export-Phase75Evidence.ps1`へ確認済みClient/Server IDと作成開始時刻を渡す。
 専用Lab Roleと各instanceのPurposeタグ・固定Private IPを確認した後、構成・ルール・配送設定、
 両console、開始時刻以後のALERT/FLOWイベントをCLIの自動paginationで取得し、
-リポジトリ外の一意な一時フォルダーへJSONとSHA-256 manifestを保存する。
+Git対象外の`learning-records/evidence/`内に一意なフォルダーを作り、JSONとSHA-256 manifestを保存する。
+書込み前にGit除外と未追跡を確認し、既存の証跡は上書きしない。
 AWSの書込みAPI・Terraform・IAM変更は行わない。証跡保存で撤去期限を延長しない。
 途中エラーは取得済み証跡を残し、manifestのComplete=falseとエラーで未完了を示す。
 
 consoleが以前の全cycleを保持する保証はなく、ログ配送中の読取りはatomic snapshotでもない。
 保存完了は通信試験の自動合格を意味しない。SHA-256は保存後の改変検知用であり、
 AWS原本の真正性を証明する署名ではない。生の識別子・ログ・consoleはGitへ追加しない。
-一時保存先から学習記録へ保管する際も公開対象から除外し、元の証跡を上書きしない。
+過去のTemp保存分は同じ非公開領域へコピーし、元とのSHA-256一致を確認する。Temp原本は自動削除しない。
 
 ## 撤去
 

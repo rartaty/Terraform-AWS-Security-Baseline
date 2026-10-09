@@ -27,6 +27,7 @@ backend.hcl.json
 .env.*
 
 # Local article source notes
+learning-records/
 docs/decisions/
 docs/07_phase*_work_log.md
 docs/phase7_article_draft.md
