@@ -84,30 +84,3 @@ resource "aws_budgets_budget_action" "deny_high_cost_provisioning" {
     address           = var.budget_notification_email
   }
 }
-
-# Separate protection for the Lab role; keep the existing Baseline action intact.
-# This prevents new provisioning, not charges from already running resources.
-resource "aws_budgets_budget_action" "deny_phase75_provisioning" {
-  budget_name        = aws_budgets_budget.monthly_cost.name
-  action_type        = "APPLY_IAM_POLICY"
-  approval_model     = "AUTOMATIC"
-  notification_type  = "ACTUAL"
-  execution_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/BudgetActionExecutionRole"
-
-  action_threshold {
-    action_threshold_type  = "ABSOLUTE_VALUE"
-    action_threshold_value = 10
-  }
-
-  definition {
-    iam_action_definition {
-      policy_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/DenyPhase75ProvisioningAtBudgetLimit"
-      roles      = ["Phase75LabExecutionRole"]
-    }
-  }
-
-  subscriber {
-    subscription_type = "EMAIL"
-    address           = var.budget_notification_email
-  }
-}
