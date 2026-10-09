@@ -3,7 +3,6 @@ locals {
     "S3_DATA_EVENTS",
     "EKS_AUDIT_LOGS",
     "EBS_MALWARE_PROTECTION",
-    "RDS_LOGIN_EVENTS",
     "LAMBDA_NETWORK_LOGS",
     "RUNTIME_MONITORING",
     "AI_PROTECTION",
@@ -39,5 +38,23 @@ resource "aws_guardduty_detector_feature" "disabled" {
       name   = additional_configuration.key
       status = additional_configuration.value
     }
+  }
+}
+
+moved {
+  from = aws_guardduty_detector_feature.disabled["RDS_LOGIN_EVENTS"]
+  to   = aws_guardduty_detector_feature.rds_login_events
+}
+
+resource "aws_guardduty_detector_feature" "rds_login_events" {
+  detector_id = aws_guardduty_detector.security_monitoring.id
+  name        = "RDS_LOGIN_EVENTS"
+  status      = "DISABLED"
+
+  lifecycle {
+    # Temporary provider compatibility exception for RDS only.
+    # Audit the full additional configuration with GetDetector; do not ignore status.
+    # Remove this exception after provider support and a clean plan are verified.
+    ignore_changes = [additional_configuration]
   }
 }
