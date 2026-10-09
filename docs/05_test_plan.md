@@ -20,7 +20,7 @@
 |---|---|---|
 | Phase 7のNetwork Baseline | 実装・主要検証済み | 静的要件と保存証跡の対応付けを完了する。第7.4節参照 |
 | Phase 7のACCEPT／REJECT試験 | HTTP応答・受信側ENIのACCEPT／REJECT照合、一時resource撤去済み。手動IAMの整理結果と確認範囲は第5.1節へ記録済み | 試験の再作成は不要。IAMの未確認範囲は第4節と区別して管理する |
-| Phase 7.5のAWS Network Firewall | 2026-10-08に構築、同一接続のHTTP結果とALERT／DROP署名照合、前後の通常URIの成功、非公開証跡保存、Lab主要resource 23個の撤去を確認。2026-10-09にLab IAM・Budget Action・backendの整理を完了。確認方法は第5.2節。[Lab構成・手順](../envs/phase75/README.md) | 証跡内容と試験判定の整理、反映後の費用確認。削除後のIAM・backend API再取得と内部ログ配送情報の全件照会は未実施として区別する。指定名・Labタグ・IP範囲での不在確認をaccount全体の残存ゼロと扱わない。TLS・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外 |
+| Phase 7.5のAWS Network Firewall | 2026-10-08に構築、同一接続のHTTP結果とALERT／DROP署名照合、前後の通常URIの成功、非公開証跡保存、Lab主要resource 23個の撤去を確認。2026-10-09にLab IAM・Budget Action・backendの整理と保存原本による試験判定の対応付けを完了。確認方法は第5.2〜5.3節。[Lab構成・手順](../envs/phase75/README.md) | 反映後の費用確認。削除後のIAM・backend API再取得、内部ログ配送情報の全件照会、代表DROP通信のFLOWログ照合は未実施として区別する。指定名・Labタグ・IP範囲での不在確認をaccount全体の残存ゼロと扱わない。TLS・実攻撃・multi-AZ可用性・独立したStateless遮断試験は対象外 |
 
 ## 3. 採否判断が必要な事項・見送り済みの事項
 
@@ -98,6 +98,24 @@ No changesは通常planの参照処理を確認した結果であり、将来の
 | 保持対象 | 共有backend bucketとBaseline用stateを保持した。Labの撤去をBaseline全体の撤去・課金停止と扱わない |
 | 通常plan | Lab Budget Action削除後は0追加・1変更・0削除。GuardDutyの追加設定差分1件が残り、未適用。過去のNo changesと現在の差分を区別する |
 | 費用 | 10月7〜8日（UTC）のアカウント全体サービス別料金を取得したが、両日Estimated=true。Lab単独の費用帰属、確定費用、撤去後の課金停止は未確認 |
+
+### 5.3 保存原本とPhase 7.5試験判定の対応付け
+
+2026-10-09に保存原本9ファイルのサイズ・SHA-256をmanifestと再照合し、すべて一致した。
+通信試験はALERT時とDROP時の代表各1 cycleを、時刻・5-tuple・試験URI・署名IDで照合した。
+TimeoutのConsole記録時刻には待機時間が含まれるため、要求前後の時系列も区別した。
+
+| 試験・確認項目 | 原本と判定 |
+|---|---|
+| ALERT | Client Consoleの試験URI HTTP 200と、ALERTログの同じ通信の署名・allowed／alertが一致。合格 |
+| DROP | Client Consoleの試験URI Timeoutと、ALERTログの同じ通信の署名・blocked／dropが一致。合格。Timeout単独を遮断証明にしていない |
+| 正常通信への影響 | 両cycleとも試験URIの前後の通常URIがHTTP 200。合格 |
+| Firewall同期 | 保存したFirewall応答はREADY／IN_SYNC、Rule原本はdrop。試験時のALERT原本は別時点のログで照合し、最終Ruleを過去の設定証明にしない |
+| FLOWログ | 保存範囲のFLOWログ配送と代表ALERT通信の同一flow_idを確認。代表DROP通信の同一flow_idは保存範囲に見つからず、未照合。HTTP結果＋署名によるDROP判定とは区別する |
+
+ALERTログ753件中752件、FLOWログ381件中380件がJSON形式だった。
+各1件の権限確認メッセージは通信イベントではないため、署名判定の対象から除外した。
+詳細な対応表と解析結果はGit対象外へ保存し、公開文書に実IP・Port・flow_id・原本を含めない。
 
 ## 6. 証跡の管理と終了条件
 
@@ -196,6 +214,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 今回この保護も待機日数も変更しない。
 
 ## Activity Log
+
+- 2026-10-09: Phase 7.5の保存原本9ファイルのサイズ・SHA-256を再照合し、ALERT／DROPの代表2 cycleを時刻・5-tuple・URI・署名で対応付けた。両試験と前後の通常URIは合格。ログの非JSON権限確認メッセージを除外し、代表DROPのFLOWログ未照合は維持した。AWS再構築・設定変更・pushは行っていない。
 
 - 2026-10-09: Lab stateの全31 versionと取得前後の一覧をGit対象外へ保存し、33ファイルのサイズ・SHA-256一致を確認した。読み取り用一時RoleをConsoleで削除し、Lab用state・lockfileの全versionと削除マーカー計125件を完全削除。共有bucketを保持し、bucket直下でversion表示ON・対象prefix検索後の残存0件をConsoleで確認した。削除後のAPI再取得は未実施。試験状況の残作業を同期し、費用の未確定とGuardDuty差分は維持した。
 
