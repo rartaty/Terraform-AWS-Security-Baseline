@@ -185,6 +185,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
+- 2026-10-09: ConsoleでBudget実行RoleのLab専用inline policyを削除し、Baseline用inlineのみ残ることを確認した。Lab用Budget抑止managed policyも通常アタッチ・Boundary利用0件を確認後に削除した。最後のmanaged policy削除後の一覧再検索とIAM API再取得は未実施として区別する。
+
 - 2026-10-09: ConsoleでLab実行Roleを削除し、通常managed policy 4つと専用Boundaryの利用先0件を確認後に削除した。Role・5 policyの一覧再検索で不在を確認。削除後のIAM API再取得は未実施。Lab用Budget抑止policyとBudget実行RoleのLab専用付け外し権限は残確認として維持する。
 
 - 2026-10-09: Lab backendの参照先と専用Roleを照合し、default workspace、state一覧が空、state pullのresources=0を確認。原本とSHA-256をGit対象外へ保存した。共有backend bucket・remote state object・IAMはこの確認で削除していない。
