@@ -215,6 +215,8 @@ AWS管理keyや無料のサービス保持履歴まで消去すること、無�
 
 ## Activity Log
 
+- 2026-10-09: GuardDutyの対応版を公式実装・SDKと照合し、最新公開Provider 6.68.0を非公開の独立rootで取得してvalidateした。RDS_DATA_RISKは引き続き拒否されたため、本体6.58.0を維持した。開発中SDKの対応と公開済みProviderの対応を区別し、更新や差分無視は未適用。AWS API・backend・plan・applyはこの検証で実行していない。
+
 - 2026-10-09: 保存済みplanとProvider 6.58.0の実装を照合し、GuardDuty差分をRDS_LOGIN_EVENTS配下の未定義追加設定へ特定した。既存Providerを使う非公開のオフライン検証でRDS_DATA_RISKの明示がvalidateにより拒否されることを確認した。機能は計画前後ともDISABLED。AWS設定・IAM権限・Providerバージョンは変更せず、差分は未適用として維持する。
 
 - 2026-10-09: Phase 7.5の保存原本9ファイルのサイズ・SHA-256を再照合し、ALERT／DROPの代表2 cycleを時刻・5-tuple・URI・署名で対応付けた。両試験と前後の通常URIは合格。ログの非JSON権限確認メッセージを除外し、代表DROPのFLOWログ未照合は維持した。AWS再構築・設定変更・pushは行っていない。
