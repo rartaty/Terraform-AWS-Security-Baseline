@@ -6,6 +6,24 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$auditRepository = [System.IO.Path]::GetFullPath((Split-Path $PSScriptRoot -Parent))
+$auditPrivateRoot = Join-Path $auditRepository 'learning-records/evidence'
+if (-not $OutputDirectory) {
+    $OutputDirectory = Join-Path $auditPrivateRoot ('baseline-boundary-audit-' + [guid]::NewGuid().ToString())
+}
+$auditDestination = [System.IO.Path]::GetFullPath($OutputDirectory)
+$auditPrivatePrefix = [System.IO.Path]::GetFullPath($auditPrivateRoot).TrimEnd('\', '/') + [System.IO.Path]::DirectorySeparatorChar
+if (-not $auditDestination.StartsWith($auditPrivatePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+    throw 'Store audit evidence under learning-records/evidence.'
+}
+& git -C $auditRepository check-ignore --quiet -- $auditDestination
+if ($LASTEXITCODE -ne 0) { throw 'Audit destination must be ignored by Git before collection.' }
+$auditTrackedEvidence = @(& git -C $auditRepository ls-files -- $auditDestination)
+if ($LASTEXITCODE -ne 0 -or $auditTrackedEvidence.Count -ne 0) { throw 'Cannot verify an untracked audit destination.' }
+if (Test-Path -LiteralPath $auditDestination) {
+    throw 'Output directory already exists. Choose a new directory to preserve prior evidence.'
+}
+
 function Invoke-AuditAws {
     param([string[]]$Arguments)
     $response = & aws @Arguments --profile $Profile --output json --no-cli-pager
@@ -18,16 +36,6 @@ function Invoke-AuditAws {
 $caller = Invoke-AuditAws -Arguments @('sts', 'get-caller-identity')
 if ($caller.Arn -notmatch ':user/terraform-operator$') {
     throw 'Use the terraform-operator IAM user profile for this temporary audit.'
-}
-
-if (-not $OutputDirectory) {
-    $OutputDirectory = Join-Path ([System.IO.Path]::GetTempPath()) (
-        'baseline-boundary-audit-' + [guid]::NewGuid().ToString()
-    )
-}
-$auditDestination = [System.IO.Path]::GetFullPath($OutputDirectory)
-if (Test-Path -LiteralPath $auditDestination) {
-    throw 'Output directory already exists. Choose a new directory to preserve prior evidence.'
 }
 
 $roles = @()
@@ -102,7 +110,7 @@ $audit = [pscustomobject]@{
         'This inventory is not an effective-permission or privilege-escalation proof.'
     )
 }
-[void](New-Item -ItemType Directory -Path $auditDestination)
+[void](New-Item -ItemType Directory -Path $auditDestination -Force)
 $auditFile = Join-Path $auditDestination 'iam-boundary-audit.json'
 $audit | ConvertTo-Json -Depth 100 | Set-Content -LiteralPath $auditFile -Encoding utf8
 Get-FileHash -LiteralPath $auditFile -Algorithm SHA256 |
