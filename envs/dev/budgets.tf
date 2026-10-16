@@ -1,4 +1,6 @@
 resource "aws_budgets_budget" "monthly_cost" {
+  count = var.enable_budget ? 1 : 0
+
   name         = "${var.project_name}-${var.environment}-monthly-cost"
   budget_type  = "COST"
   limit_amount = "10"
@@ -61,7 +63,9 @@ resource "aws_budgets_budget" "monthly_cost" {
 }
 
 resource "aws_budgets_budget_action" "deny_high_cost_provisioning" {
-  budget_name        = aws_budgets_budget.monthly_cost.name
+  count = var.enable_budget ? 1 : 0
+
+  budget_name        = aws_budgets_budget.monthly_cost[0].name
   action_type        = "APPLY_IAM_POLICY"
   approval_model     = "AUTOMATIC"
   notification_type  = "ACTUAL"
@@ -83,4 +87,14 @@ resource "aws_budgets_budget_action" "deny_high_cost_provisioning" {
     subscription_type = "EMAIL"
     address           = var.budget_notification_email
   }
+}
+
+moved {
+  from = aws_budgets_budget.monthly_cost
+  to   = aws_budgets_budget.monthly_cost[0]
+}
+
+moved {
+  from = aws_budgets_budget_action.deny_high_cost_provisioning
+  to   = aws_budgets_budget_action.deny_high_cost_provisioning[0]
 }

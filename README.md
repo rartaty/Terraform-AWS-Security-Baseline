@@ -9,10 +9,16 @@ S3の全version、backend、課金サービス、KMSの削除待機を含む残�
 
 ## Status
 
-実装・検証を進行中（2026-09-23同期）。Phase 0〜5は完了、Phase 6は実装・主要動作確認済み。
-Phase 7はNetwork Baseline・Flow Logs・Config連携の構築、通信試験、ConfigのS3原本照合、
-一時試験リソースの撤去を完了しました。暫定費用は取得済みで、確定費用・静的証跡の整理・手動IAM権限の最終確認などは残っています。
-Phase 7.5は2026-10-08にHTTPの内容検査とLab主要リソースの撤去を確認しました。Phase 8は未着手です。残る整理・確認は[試験・確認状況](docs/05_test_plan.md)を参照してください。
+構築・主要試験と撤去操作を終え、最終確認待ちです（2026-10-16同期）。
+VPCの許可／拒否通信とFlow Logs、AWS Configの構成・削除履歴、Network FirewallのHTTP内容検査による検知／遮断を確認しました。
+Phase 8では検証環境、ログ保存先、S3 backend、専用IAMを整理し、dev・bootstrapのTerraform管理対象0を確認しました。
+
+**KMSの実削除と最終費用の確認は未完了**です。KMSは2026-11-14 18:24 JSTの削除予定で、予定日時後に実削除を確認します。
+アカウント全体のS3公開防止、ログイン・MFA・費用参照の経路は保持しています。
+実施していない拒否・復旧試験と確認方法の限界は[試験・確認状況](docs/05_test_plan.md)に記載しています。
+
+コードは構築時の構成を再利用するために残しています。削除済みのbackendや実行Roleをそのまま利用することはできません。
+再構築時は認証・backend・費用・削除手順を確認し、planをレビューしてからapplyしてください。
 
 ## Roadmap
 
@@ -41,6 +47,8 @@ Phaseごとの目的、完了条件、依存関係は[アーキテクチャ](doc
 
 ## Main components
 
+以下は構築・検証したサービスです。現在稼働中の一覧ではありません。
+
 - AWS Budgets
 - AWS CloudTrail
 - Amazon S3 security controls
@@ -58,4 +66,4 @@ Phaseごとの目的、完了条件、依存関係は[アーキテクチャ](doc
 - `bootstrap/`: Terraform backendなどの初期基盤
 - `envs/dev/`: dev環境のTerraformルートモジュール
 - `modules/`: 再利用可能なTerraformモジュール
-- `docs/`: 要件、設計、試験、証跡
+- `docs/`: 要件、設計概要、試験結果と確認限界（生の証跡・記事原稿・詳細な意思決定記録は非公開）

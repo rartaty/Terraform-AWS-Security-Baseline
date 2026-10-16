@@ -1,6 +1,9 @@
-resource "aws_s3_account_public_access_block" "this" {
-  block_public_acls       = true
-  ignore_public_acls      = true
-  block_public_policy     = true
-  restrict_public_buckets = true
+# Keep account-wide S3 public access protection after this learning environment exits.
+# This removes only Terraform ownership; the AWS setting remains enabled.
+removed {
+  from = aws_s3_account_public_access_block.this
+
+  lifecycle {
+    destroy = false
+  }
 }

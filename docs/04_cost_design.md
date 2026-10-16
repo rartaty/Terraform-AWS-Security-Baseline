@@ -5,6 +5,9 @@
 - 更新日: 2026-09-28（Phase 7の実装状態を同期。料金単価・月額モデルの再見積りは未実施）
 - 対象リージョン: `ap-northeast-1`（東京）
 
+本書の月額モデルは構築時の計画値であり、現在の利用額ではない。2026-10-16時点では撤去操作を終え、
+KMS実削除と最終費用の確認を残している。暫定費用と確認限界は[試験・確認状況](05_test_plan.md)を参照する。
+
 ## 1. 結論
 
 本プロジェクトを全Phaseまで小規模構成で稼働させた場合、
@@ -29,7 +32,7 @@
 - KMS customer managed keyは1個とし、CloudTrailとAWS Configで共有する。Phase 7のFlow Logs専用S3はSSE-S3とし、KMS利用主体を追加しない。
 - Security HubはEssentials相当の必要機能だけとし、Extended Planは使わない。
 - GuardDuty Protection Planは必要なものだけを選び、不要なplanは無効化する。
-- IAM Access Analyzerは無料のexternal access analyzerだけを使う。
+- 独立作成のIAM Access Analyzerは無料のexternal access analyzerを使う。Security Hubが自動作成するservice-linked analyzerは後述のとおり区別する。
 - AWS Configは記録対象resource typeとmanaged ruleを少数に限定する。
 - S3に保存するstateとログは小容量とする。
 
@@ -128,8 +131,9 @@ Phase 0はAWS課金なし、Phase 2は本件の無料枠内のBudget利用を前
 ### IAM Access Analyzer
 
 - external access analyzerは追加料金なしであるため、本件ではこれを採用する。
-- internal access analyzer、unused access analyzer、custom policy checkは有料なので対象外とする。
-- unused access analyzerを誤って選ぶとIAM user/role数に応じた月額が発生する。
+- 独立作成のinternal access analyzer、unused access analyzer、custom policy checkは有料なので対象外とする。
+- 独立作成のunused access analyzerを選ぶとIAM user/role数に応じた月額が発生する。
+- 2026-10-15のRegion横断確認で、Security Hubがus-east-1へ自動作成したservice-linked unused access analyzerを確認した。managedByはsecurityhubv2.amazonaws.comである。この連携Analyzer自体に追加料金はなく、Security Hubを全Regionで無効化すると自動削除される。Security Hub本体の料金と、独立作成Analyzerの料金を混同しない。[AWS公式の連携Analyzer仕様・料金](https://docs.aws.amazon.com/securityhub/latest/userguide/unused-access-findings.html)を参照する。
 
 ### AWS Config
 

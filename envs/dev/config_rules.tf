@@ -77,7 +77,7 @@ locals {
 }
 
 resource "aws_config_config_rule" "managed" {
-  for_each = local.config_managed_rules
+  for_each = { for key, rule in local.config_managed_rules : key => rule if var.enable_baseline_monitoring }
 
   name                        = "${var.project_name}-${var.environment}-${each.value.name}"
   description                 = each.value.description

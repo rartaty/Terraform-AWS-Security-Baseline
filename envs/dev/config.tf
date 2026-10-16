@@ -1,10 +1,14 @@
 data "aws_iam_role" "config_service_linked" {
+  count = var.enable_baseline_monitoring ? 1 : 0
+
   name = "AWSServiceRoleForConfig"
 }
 
 resource "aws_config_configuration_recorder" "security_baseline" {
+  count = var.enable_baseline_monitoring ? 1 : 0
+
   name     = "${var.project_name}-${var.environment}-recorder"
-  role_arn = data.aws_iam_role.config_service_linked.arn
+  role_arn = data.aws_iam_role.config_service_linked[0].arn
 
   recording_group {
     all_supported                 = false
@@ -41,9 +45,11 @@ resource "aws_config_configuration_recorder" "security_baseline" {
 }
 
 resource "aws_config_delivery_channel" "security_baseline" {
+  count = var.enable_baseline_monitoring ? 1 : 0
+
   name           = "${var.project_name}-${var.environment}-delivery"
-  s3_bucket_name = aws_s3_bucket.config_history.bucket
-  s3_kms_key_arn = aws_kms_key.security_logs.arn
+  s3_bucket_name = aws_s3_bucket.config_history[0].bucket
+  s3_kms_key_arn = local.security_logs_key_arn
 
   depends_on = [
     aws_s3_bucket_policy.config_history,
@@ -53,10 +59,27 @@ resource "aws_config_delivery_channel" "security_baseline" {
 }
 
 resource "aws_config_configuration_recorder_status" "security_baseline" {
-  name       = aws_config_configuration_recorder.security_baseline.name
+  count = var.enable_baseline_monitoring ? 1 : 0
+
+  name       = aws_config_configuration_recorder.security_baseline[0].name
   is_enabled = true
 
   depends_on = [
     aws_config_delivery_channel.security_baseline
   ]
+}
+
+moved {
+  from = aws_config_configuration_recorder.security_baseline
+  to   = aws_config_configuration_recorder.security_baseline[0]
+}
+
+moved {
+  from = aws_config_delivery_channel.security_baseline
+  to   = aws_config_delivery_channel.security_baseline[0]
+}
+
+moved {
+  from = aws_config_configuration_recorder_status.security_baseline
+  to   = aws_config_configuration_recorder_status.security_baseline[0]
 }

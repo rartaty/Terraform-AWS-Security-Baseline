@@ -3,7 +3,7 @@ resource "aws_security_group" "phase7_test_client" {
 
   name_prefix = "${var.project_name}-${var.environment}-p7-client-"
   description = "Temporary Phase 7 test client"
-  vpc_id      = aws_vpc.phase7_learning.id
+  vpc_id      = aws_vpc.phase7_learning[0].id
 
   tags = {
     Name    = "${var.project_name}-${var.environment}-p7-client"
@@ -16,7 +16,7 @@ resource "aws_security_group" "phase7_test_server" {
 
   name_prefix = "${var.project_name}-${var.environment}-p7-server-"
   description = "Temporary Phase 7 test server"
-  vpc_id      = aws_vpc.phase7_learning.id
+  vpc_id      = aws_vpc.phase7_learning[0].id
 
   tags = {
     Name    = "${var.project_name}-${var.environment}-p7-server"

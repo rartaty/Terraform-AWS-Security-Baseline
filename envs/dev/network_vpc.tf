@@ -2,6 +2,8 @@
 // groups are deliberately added in a later step after their IAM permissions
 // can be restricted to this VPC's concrete ID.
 resource "aws_vpc" "phase7_learning" {
+  count = var.enable_phase7_network ? 1 : 0
+
   cidr_block           = "10.70.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -16,9 +18,11 @@ resource "aws_vpc" "phase7_learning" {
 // instead of relying on a computed aws_vpc attribute, which can be empty in
 // provider state even when the group exists in AWS.
 data "aws_security_group" "phase7_learning_default" {
+  count = var.enable_phase7_network ? 1 : 0
+
   filter {
     name   = "vpc-id"
-    values = [aws_vpc.phase7_learning.id]
+    values = [aws_vpc.phase7_learning[0].id]
   }
 
   filter {
@@ -31,7 +35,19 @@ data "aws_security_group" "phase7_learning_default" {
 // Explicit empty rule collections make the group remain closed. It is not used
 // by the Phase 7 workloads.
 resource "aws_default_security_group" "phase7_learning_closed" {
-  vpc_id  = aws_vpc.phase7_learning.id
+  count = var.enable_phase7_network ? 1 : 0
+
+  vpc_id  = aws_vpc.phase7_learning[0].id
   ingress = []
   egress  = []
+}
+
+moved {
+  from = aws_vpc.phase7_learning
+  to   = aws_vpc.phase7_learning[0]
+}
+
+moved {
+  from = aws_default_security_group.phase7_learning_closed
+  to   = aws_default_security_group.phase7_learning_closed[0]
 }

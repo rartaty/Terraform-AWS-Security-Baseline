@@ -5,6 +5,9 @@
 - 最終更新日: 2026-09-28（Phase 7実装状態を同期。残存riskの数値再評価は未実施）
 - 対象: 個人所有の単一AWSアカウント、dev環境、ap-northeast-1
 
+以下の制御・残存riskは構築時の設計と評価であり、現在稼働中の環境を示すものではない。
+2026-10-16時点の撤去結果と確認待ち事項は[試験・確認状況](05_test_plan.md)を参照する。
+
 ## 1. 目的
 
 本プロジェクトは、将来、別のsystemを許可された利用者が
@@ -462,7 +465,7 @@ Risk scoreは、発生可能性と影響度を掛け合わせて算出する。
 | 固有risk | 発生可能性2 × 影響度3 = 6（高） |
 | 現在の残存risk | 構築済みのため評価対象。実装・試験結果を踏まえた数値再評価は未実施であり、目標値の達成とは扱わない |
 | 目標残存risk | 発生可能性1 × 影響度3 = 3（中） |
-| 検証方法 | 一時EC2-AからEC2-Bの許可Portと非許可Portへ通信し、EC2-B側ENIのFlow LogでSource／Destination／Port／Action／Log Statusを照合する。成否にかかわらず試験計画の待機・全体上限の早い方で試験を終了し、Cleanupへ進む。ログ到着待ちを理由に延長せず、削除失敗時は残存と課金継続を報告する。実施結果と残確認は試験計画を参照する |
+| 検証方法 | 一時EC2-AからEC2-Bの許可Portと非許可Portへ通信し、EC2-B側ENIのFlow LogでSource／Destination／Port／Action／Log Statusを照合する。成否にかかわらず試験計画の待機・全体上限の早い方で試験を終了し、Cleanupへ進む。ログ到着待ちを理由に延長せず、削除失敗時は残存と課金継続を記録し、撤去対応を継続する。実施結果と残確認は試験計画を参照する |
 | 残存risk | Network設定が正しくても、将来配置するapplication自体の脆弱性や認証不備は別のriskとして残る。Security GroupはAllow ruleだけであり、既存connectionはrule変更後もconnection trackingの有効期間中継続する場合がある。Flow Logsも全packetを記録するPacket Captureではなく、配送はbest effortである |
 
 ## 9. Security control対応表

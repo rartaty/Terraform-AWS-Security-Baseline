@@ -16,6 +16,7 @@ Infrastructure as Codeの学習を目的とする。
 - 原則として低コストまたは無料枠内
 - 学習・最終検証後はTerraformで作成したBaselineをdestroyし、本件由来の継続課金を残さない
 - 全versionを含むS3・backend・手動作成した本件専用resourceも棚卸しし、完全削除と課金停止を確認する。無関係な既存resourceやAWS管理resourceの一括削除は対象外
+- 2026-10-15の保持判断により、アカウント全体のS3 Block Public Accessは有効のまま残す。撤去時は設定を弱めず、Terraform管理から外す変更を個別に確認する
 - KMS等の削除待機と請求反映遅延を考慮し、destroyコマンド成功だけで完了としない
 - 本番環境ではなく、セキュリティ基盤の検証環境とする
 

@@ -11,19 +11,23 @@ locals {
 }
 
 resource "aws_accessanalyzer_analyzer" "external_access" {
+  count = var.enable_baseline_monitoring ? 1 : 0
+
   analyzer_name = "${var.project_name}-${var.environment}-external-access"
   type          = "ACCOUNT"
 }
 
 resource "aws_guardduty_detector" "security_monitoring" {
+  count = var.enable_baseline_monitoring ? 1 : 0
+
   enable                       = true
   finding_publishing_frequency = "SIX_HOURS"
 }
 
 resource "aws_guardduty_detector_feature" "disabled" {
-  for_each = local.guardduty_disabled_features
+  for_each = var.enable_baseline_monitoring ? local.guardduty_disabled_features : toset([])
 
-  detector_id = aws_guardduty_detector.security_monitoring.id
+  detector_id = aws_guardduty_detector.security_monitoring[0].id
   name        = each.value
   status      = "DISABLED"
 
@@ -47,7 +51,9 @@ moved {
 }
 
 resource "aws_guardduty_detector_feature" "rds_login_events" {
-  detector_id = aws_guardduty_detector.security_monitoring.id
+  count = var.enable_baseline_monitoring ? 1 : 0
+
+  detector_id = aws_guardduty_detector.security_monitoring[0].id
   name        = "RDS_LOGIN_EVENTS"
   status      = "DISABLED"
 
@@ -57,4 +63,19 @@ resource "aws_guardduty_detector_feature" "rds_login_events" {
     # Remove this exception after provider support and a clean plan are verified.
     ignore_changes = [additional_configuration]
   }
+}
+
+moved {
+  from = aws_accessanalyzer_analyzer.external_access
+  to   = aws_accessanalyzer_analyzer.external_access[0]
+}
+
+moved {
+  from = aws_guardduty_detector.security_monitoring
+  to   = aws_guardduty_detector.security_monitoring[0]
+}
+
+moved {
+  from = aws_guardduty_detector_feature.rds_login_events
+  to   = aws_guardduty_detector_feature.rds_login_events[0]
 }

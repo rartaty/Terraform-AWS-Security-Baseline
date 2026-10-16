@@ -1,5 +1,5 @@
 locals {
-  phase7_config_audit_object_arn = "${aws_s3_bucket.config_history.arn}/${var.phase7_config_audit_object_key}"
+  phase7_config_audit_object_arn = "${local.log_bucket_arns.config}/${var.phase7_config_audit_object_key}"
 }
 
 resource "aws_iam_role" "phase7_config_audit" {
@@ -43,7 +43,7 @@ data "aws_iam_policy_document" "phase7_config_audit" {
     sid       = "DecryptOneConfigHistoryObjectThroughS3"
     effect    = "Allow"
     actions   = ["kms:Decrypt"]
-    resources = [aws_kms_key.security_logs.arn]
+    resources = [local.security_logs_key_arn]
 
     condition {
       test     = "StringEquals"

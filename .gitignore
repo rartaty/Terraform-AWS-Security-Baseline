@@ -19,6 +19,8 @@ backend.hcl
 backend.hcl.json
 !backend.hcl.example
 !backend.hcl.json.example
+# Local-only backend transition during final teardown
+envs/dev/phase8_backend_override.tf
 
 # Sensitive files
 *.pem
@@ -32,6 +34,7 @@ docs/decisions/
 docs/07_phase*_work_log.md
 docs/phase7_article_draft.md
 docs/local-github-and-backend-setup.md
+docs/06_ai_agent_control_loop.md
 
 # IDE / Editor
 .vscode/

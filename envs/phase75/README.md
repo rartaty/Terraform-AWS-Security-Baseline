@@ -1,6 +1,8 @@
 # Phase 7.5: Private HTTP Network Firewall Lab
 
 別root・別stateで既存P7 VPCを参照する短期Lab。
+Labは撤去済みで、2026-10-16時点では参照元のBaseline VPC・共有backendも撤去済み。
+以下は構築時の手順であり、再実行には前提resource・認証・費用の再確認が必要。
 検証目的・確認範囲と停止条件は以下に記載する。
 コード実装・mockテストと、実AWSの認可・通信・ログ配送は別の確認である。
 

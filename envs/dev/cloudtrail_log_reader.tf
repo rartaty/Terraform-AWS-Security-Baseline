@@ -14,6 +14,8 @@ data "aws_iam_policy_document" "cloudtrail_log_reader_trust" {
 }
 
 resource "aws_iam_role" "cloudtrail_log_reader" {
+  count = var.enable_evidence_readers ? 1 : 0
+
   name                 = "CloudTrailLogReadRole"
   description          = "Read-only role for this project's CloudTrail logs"
   assume_role_policy   = data.aws_iam_policy_document.cloudtrail_log_reader_trust.json
@@ -27,8 +29,8 @@ data "aws_iam_policy_document" "cloudtrail_log_reader_permissions" {
     actions = ["s3:GetObject"]
 
     resources = [
-      "${aws_s3_bucket.cloudtrail_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/CloudTrail/*",
-      "${aws_s3_bucket.cloudtrail_logs.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/CloudTrail-Digest/*"
+      "${local.log_bucket_arns.cloudtrail}/AWSLogs/${data.aws_caller_identity.current.account_id}/CloudTrail/*",
+      "${local.log_bucket_arns.cloudtrail}/AWSLogs/${data.aws_caller_identity.current.account_id}/CloudTrail-Digest/*"
     ]
   }
 
@@ -36,7 +38,7 @@ data "aws_iam_policy_document" "cloudtrail_log_reader_permissions" {
     sid       = "ListCloudTrailLogsAndDigests"
     effect    = "Allow"
     actions   = ["s3:ListBucket"]
-    resources = [aws_s3_bucket.cloudtrail_logs.arn]
+    resources = [local.log_bucket_arns.cloudtrail]
 
     condition {
       test     = "StringLike"
@@ -50,7 +52,9 @@ data "aws_iam_policy_document" "cloudtrail_log_reader_permissions" {
 }
 
 resource "aws_iam_role_policy" "cloudtrail_log_reader" {
+  count = var.enable_evidence_readers ? 1 : 0
+
   name   = "ReadCloudTrailLogsAndDigests"
-  role   = aws_iam_role.cloudtrail_log_reader.name
+  role   = aws_iam_role.cloudtrail_log_reader[0].name
   policy = data.aws_iam_policy_document.cloudtrail_log_reader_permissions.json
 }

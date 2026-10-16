@@ -4,6 +4,9 @@
 - 制定日: 2026-08-25
 - 対象: 個人所有の単一AWSアカウント、dev環境、`ap-northeast-1`
 
+本書は構築時の設計とPhaseごとの目的を示す。2026-10-16時点では主要試験・撤去操作を終え、
+KMS実削除と最終費用の確認を残している。現在の結果・確認限界は[試験・確認状況](05_test_plan.md)を参照する。
+
 ## 1. Phase構成を設ける目的
 
 本プロジェクトを、依存関係と課金リスクに沿った小さな単位に分ける。
@@ -185,7 +188,8 @@ HTTPS必須化を適用した。apply後の`No changes`、`IsLogging=True`、
 
 - Amazon GuardDutyの基礎的な脅威検出を有効化する。
 - AWS Security Hubの現行プランとCSPM機能を確認して有効化する。
-- IAM Access Analyzerは無料のexternal access analyzerを使用する。
+- 独立して作成するIAM Access Analyzerは無料のexternal access analyzerを使用する。
+- 2026-10-15に、Security Hubがus-east-1へ自動作成したservice-linked unused access analyzerも確認した。独立作成のAnalyzerとは別であり、追加料金と撤去時の扱いは[費用設計](04_cost_design.md)・[試験計画](05_test_plan.md)に記録する。
 
 判断理由:
 
@@ -367,7 +371,7 @@ IAM・Budget・backend等の残整理と費用確認は[試験計画](05_test_pl
 5. `terraform plan`を読み、作成・変更・削除を確認する。
 6. 課金開始前であれば、推定金額を再確認してから`apply`する。
 7. AWS上の実体と期待する機能を確認する。
-8. 判断、エラー、解決策、実測費用を文書化してGitへ記録する。
+8. 判断、エラー、解決策、実測費用は非公開記録へ保存し、公開Gitには設計概要・匿名化した結果・確認限界を記録する。
 
 ## 5. 変更管理
 

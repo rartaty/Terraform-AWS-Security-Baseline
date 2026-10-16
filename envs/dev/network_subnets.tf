@@ -26,9 +26,9 @@ locals {
 // A subnet allocates an address range within the learning VPC. It has no
 // Internet route on its own. Route tables and associations are in network_routes.tf.
 resource "aws_subnet" "phase7" {
-  for_each = local.phase7_subnets
+  for_each = { for key, subnet in local.phase7_subnets : key => subnet if var.enable_phase7_network }
 
-  vpc_id                  = aws_vpc.phase7_learning.id
+  vpc_id                  = aws_vpc.phase7_learning[0].id
   cidr_block              = each.value.cidr_block
   availability_zone       = each.value.availability_zone
   map_public_ip_on_launch = false

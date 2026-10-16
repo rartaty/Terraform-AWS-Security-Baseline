@@ -20,6 +20,8 @@ data "aws_iam_policy_document" "config_evidence_reader_trust" {
 }
 
 resource "aws_iam_role" "config_evidence_reader" {
+  count = var.enable_evidence_readers ? 1 : 0
+
   name                 = "ConfigEvidenceReadRole"
   description          = "Read-only verification role for this project's AWS Config evidence"
   assume_role_policy   = data.aws_iam_policy_document.config_evidence_reader_trust.json
@@ -34,7 +36,7 @@ data "aws_iam_policy_document" "config_evidence_reader_permissions" {
     actions = ["s3:GetObject"]
 
     resources = [
-      "${aws_s3_bucket.config_history.arn}/AWSLogs/${data.aws_caller_identity.current.account_id}/Config/*"
+      "${local.log_bucket_arns.config}/AWSLogs/${data.aws_caller_identity.current.account_id}/Config/*"
     ]
   }
 
@@ -42,7 +44,7 @@ data "aws_iam_policy_document" "config_evidence_reader_permissions" {
     sid       = "ListConfigEvidencePrefix"
     effect    = "Allow"
     actions   = ["s3:ListBucket"]
-    resources = [aws_s3_bucket.config_history.arn]
+    resources = [local.log_bucket_arns.config]
 
     condition {
       test     = "StringLike"
@@ -57,7 +59,7 @@ data "aws_iam_policy_document" "config_evidence_reader_permissions" {
     sid       = "DenyKMSOperations"
     effect    = "Deny"
     actions   = ["kms:*"]
-    resources = [aws_kms_key.security_logs.arn]
+    resources = [local.security_logs_key_arn]
   }
 
   statement {
@@ -69,7 +71,9 @@ data "aws_iam_policy_document" "config_evidence_reader_permissions" {
 }
 
 resource "aws_iam_role_policy" "config_evidence_reader" {
+  count = var.enable_evidence_readers ? 1 : 0
+
   name   = "ReadConfigEvidenceMetadata"
-  role   = aws_iam_role.config_evidence_reader.name
+  role   = aws_iam_role.config_evidence_reader[0].name
   policy = data.aws_iam_policy_document.config_evidence_reader_permissions.json
 }

@@ -1,5 +1,8 @@
 # Permissions BoundaryとIAM管理経路
 
+本書は構築時の権限分離設計を示す。2026-10-16までに本件の専用Role・Boundary等を整理した。
+削除結果と確認方法は[試験・確認状況](05_test_plan.md)を参照する。再構築時は実値・利用先・必要権限を再確認する。
+
 通常のTerraform実行とIAM権限変更を別Roleに分け、日常の操作範囲を制限する。
 Boundaryはidentity policyが付与できる権限の上限であり、単独で操作権限を与えない。
 
@@ -33,8 +36,8 @@ Boundary導入だけを全実効権限の最小化完了とは扱わない。
 
 ## 確認結果と限界
 
-2026-10-07に実行Roleと閲覧RoleのBoundary設定を確認した。
-dev・bootstrapの通常planはNo changesだった。
+以下の表は2026-10-07時点の確認範囲である。実行Roleと閲覧RoleのBoundary設定を確認し、
+dev・bootstrapの通常planはNo changesだった。後続のPhase 8では代表CloudTrail本文1件の取得・復号を確認したが、全objectや上限外操作の実試験ではない。
 
 | 確認 | 結果 | 限界 |
 |---|---|---|
